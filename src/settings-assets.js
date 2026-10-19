@@ -1,5 +1,21 @@
 // Original reference art, clipped to individual logos and field icons.
 export const settingsArtwork = {
+  cashbackTabActive: ['cashback', 958, 205, 26, 26],
+  aiTabActive: ['ai', 310, 205, 26, 26],
+  preparationTabActive: ['preparation', 504, 205, 26, 26],
+  preparationClock: ['preparation', 1079, 399, 26, 26],
+  workClock: ['preparation', 799, 576, 28, 28],
+  aiProduct: ['ai', 1079, 596, 27, 28],
+  aiPart: ['ai', 551, 596, 27, 28],
+  aiCategory: ['ai', 1079, 690, 27, 28],
+  aiCar: ['ai', 551, 690, 27, 28],
+  aiDetails: ['ai', 1079, 784, 27, 28],
+  aiOrder: ['ai', 1067, 1263, 46, 46],
+  aiSearch: ['ai', 522, 1263, 46, 46],
+  aiSupport: ['ai', 1067, 1382, 46, 46],
+  aiDescription: ['ai', 522, 1382, 46, 46],
+  aiSupplier: ['ai', 1067, 1501, 46, 46],
+  aiPricing: ['ai', 522, 1501, 46, 46],
   pricingTab: ['shipping', 1113, 205, 23, 26],
   pricingTabActive: ['pricing', 1114, 205, 24, 26],
   shippingTab: ['payments', 948, 205, 24, 26],
@@ -48,4 +64,4 @@ export const settingsArtwork = {
   sender5: ['messages', 1015, 975, 32, 32],
   sender6: ['messages', 1015, 1055, 32, 32],
 };
-export const settingsImageHeights = { shipping: 1526, payments: 2615, messages: 1379, contact: 1697, pricing: 2450 };
+export const settingsImageHeights = { shipping: 1526, payments: 2615, messages: 1379, contact: 1697, pricing: 2450, cashback: 1152, ai: 2587, preparation: 998 };
