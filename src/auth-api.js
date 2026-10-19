@@ -1,8 +1,21 @@
 export const API_BASE_URL='https://car-parts-backend.vercel.app';
-let authSession=null;
+export const AUTH_STORAGE_KEY='mypart.admin.session.v1';
+export function readStoredSession(){
+  try{const session=JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY)||'null');
+    return session?.verified===true&&typeof session.accessToken==='string'&&session.accessToken?session:null;
+  }catch{return null}
+}
+let authSession=readStoredSession();
+function notifySession(){if(typeof window!=='undefined')window.dispatchEvent(new Event('mypart:session'))}
 export function getAuthSession(){return authSession}
-export function clearAuthSession(){authSession=null}
-export function setAuthSession(session){authSession=session}
+export function clearAuthSession(){authSession=null;try{localStorage.removeItem(AUTH_STORAGE_KEY)}catch{}notifySession()}
+export function setAuthSession(session){
+  authSession=session;
+  try{localStorage.setItem(AUTH_STORAGE_KEY,JSON.stringify({verified:session.verified===true,accessToken:session.accessToken,refreshToken:session.refreshToken||null,admin:session.admin||null}))}catch{}
+  notifySession();
+}
+if(typeof window!=='undefined')window.addEventListener('storage',event=>{if(event.key===AUTH_STORAGE_KEY||event.key===null){authSession=readStoredSession();notifySession()}});
+export async function logout(){const session=authSession;clearAuthSession();if(session?.refreshToken){try{await post('/api/auth/logout',{refreshToken:session.refreshToken})}catch{/* Local logout always succeeds, even offline. */}}}
 function apiMessage(payload,fallback){const nested=payload?.data;const message=payload?.message||payload?.error?.message||nested?.message||(typeof payload?.error==='string'?payload.error:null);return typeof message==='string'?message:fallback}
 async function post(path,body){const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),20000);try{const response=await fetch(API_BASE_URL+path,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},credentials:'omit',body:JSON.stringify(body),signal:controller.signal});const contentType=response.headers.get('content-type')||'';let payload;if(contentType.includes('json')){try{payload=await response.json()}catch{throw new Error('تعذر قراءة رد الخادم. حاول مرة أخرى.')}}else{throw new Error(response.ok?'رد الخادم غير متوقع. تواصل مع مسؤول النظام.':'تعذر إتمام الطلب على الخادم. حاول مرة أخرى.')}if(!response.ok||payload?.success===false||payload?.data?.success===false)throw new Error(apiMessage(payload,response.status===429?'محاولات كثيرة. انتظر قليلًا ثم حاول مرة أخرى.':'البيانات أو رمز التحقق غير صحيح.'));return payload}catch(error){if(error.name==='AbortError')throw new Error('استغرق الخادم وقتًا طويلًا للرد. حاول مرة أخرى.');if(error instanceof TypeError)throw new Error('تعذر الاتصال بخادم تسجيل الدخول. تحقق من الاتصال أو إعدادات CORS.');throw error}finally{clearTimeout(timeout)}}
 export async function requestLogin(email,password){const payload=await post('/api/admin/login',{email,password});const data=payload?.data||payload;const challengeId=data?.challengeId||payload?.challengeId;if(data?.otpRequired===false)throw new Error('لم يطلب الخادم تحقق OTP. راجع تدفق تسجيل الدخول.');if(typeof challengeId!=='string'||!challengeId.trim())throw new Error('لم يُرجع الخادم challengeId المطلوب للتحقق. راجع استجابة تسجيل الدخول.');return {challengeId,maskedEmail:typeof data.maskedEmail==='string'?data.maskedEmail:null,expiresAt:typeof data.expiresAt==='string'?data.expiresAt:null,resendAvailableAt:typeof data.resendAvailableAt==='string'?data.resendAvailableAt:null,resendsRemaining:Number.isInteger(data.resendsRemaining)?data.resendsRemaining:null}}

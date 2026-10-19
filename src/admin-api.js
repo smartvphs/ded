@@ -1,4 +1,4 @@
-import {API_BASE_URL, getAuthSession, setAuthSession} from './auth-api';
+import {API_BASE_URL, getAuthSession, setAuthSession, clearAuthSession, readStoredSession} from './auth-api';
 
 export class ApiError extends Error {
   constructor(message, status) { super(message); this.status = status; }
@@ -32,13 +32,26 @@ async function send(path, {method = 'GET', body, signal, token} = {}) {
   } finally { clearTimeout(timer); }
 }
 
+const sameSession = (left, right) => Boolean(left && right && left.accessToken === right.accessToken && left.refreshToken === right.refreshToken);
 let refreshing = null;
 async function refresh(session) {
   if (!refreshing) {
-    refreshing = send('/api/admin/refresh', {method: 'POST', body: {refreshToken: session.refreshToken}})
-      .then(({data}) => {
-        if (!data?.accessToken || !data?.refreshToken) throw new ApiError('تعذر تجديد الجلسة. سجّل الدخول من جديد.', 401);
-        if (getAuthSession() === session) setAuthSession({...session, accessToken: data.accessToken, refreshToken: data.refreshToken, admin: data.user || session.admin});
+    const rotate = async () => {
+      if (!sameSession(getAuthSession(), session)) return;
+      const stored = readStoredSession();
+      // Another tab may have rotated this token while this tab waited for the lock.
+      if (stored?.refreshToken && stored.refreshToken !== session.refreshToken) {
+        setAuthSession(stored);
+        return;
+      }
+      const {data} = await send('/api/admin/refresh', {method: 'POST', body: {refreshToken: session.refreshToken}});
+      if (!data?.accessToken || !data?.refreshToken) throw new ApiError('تعذر تجديد الجلسة. سجّل الدخول من جديد.', 401);
+      if (sameSession(getAuthSession(), session)) setAuthSession({...session, accessToken: data.accessToken, refreshToken: data.refreshToken, admin: data.user || session.admin});
+    };
+    refreshing = (globalThis.navigator?.locks ? navigator.locks.request('mypart.admin.refresh', rotate) : rotate())
+      .catch(error => {
+        if ([401, 403].includes(error.status) && sameSession(getAuthSession(), session)) clearAuthSession();
+        throw error;
       }).finally(() => { refreshing = null; });
   }
   return refreshing;
@@ -50,7 +63,7 @@ export async function adminRequest(path, options = {}) {
   try { return await send(path, {...options, token: session.accessToken}); }
   catch (error) {
     if (error.status !== 401 || !session.refreshToken || options.signal?.aborted) throw error;
-    if (getAuthSession() === session) await refresh(session);
+    if (sameSession(getAuthSession(), session)) await refresh(session);
     if (!getAuthSession()?.accessToken) throw error;
     return send(path, {...options, token: getAuthSession().accessToken});
   }
