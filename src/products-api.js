@@ -4,4 +4,4 @@ export function productRow(row){const specs=Array.isArray(row.specifications)?ro
  published:row.status==='published',deleted:row.status==='deleted'||row.is_deleted===true,price:row.discount_price??row.price,
  quality:row.quality_name||({original:'قطعة أصلية',oem:'قطعة بديلة',aftermarket:'قطعة بديلة',used:'مستعمل'}[row.quality_tier])||'—',
  lowQuality:null,carMakes:compatibilityMakes(row.compatibility),rating:row.reviews_count??null,averageRating:row.rating??null,company:row.brand_name||'—',viscosity:viscosity.conflict?'قيم متعارضة':viscosity.value||'—',viscosityWarning:viscosity.conflict?'قيم اللزوجة المسجلة: '+viscosity.values.join('، '):undefined,size:size.conflict?'قيم متعارضة':size.value||'—',sizeWarning:size.conflict?'مقاسات الجنط المسجلة: '+size.values.join('، '):undefined,installation:installation.conflict?'قيم متعارضة':installation.value||'—',
- customer:row.customer_name||row.name||'—',phone:row.customer_phone||'',brand:null,brands:[],image:null};}
+ customer:row.customer_name||'—',phone:row.customer_phone||'',brand:null,brands:[],image:null};}
