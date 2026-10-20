@@ -253,11 +253,7 @@ export default function ProductsPage({ onSessionExpired }) {
                     {section.id === "services" ? "خدمة" : "منتج"}
                   </b>
                 </div>
-                <Sprite
-                  asset={
-                    section.id === "services" ? "servicesBrown" : section.asset
-                  }
-                />
+                <Sprite asset={section.asset} />
               </button>
             ))}
           </section>
@@ -332,7 +328,7 @@ export default function ProductsPage({ onSessionExpired }) {
   return (
     <div className="pp-page" ref={root}>
       <div className="pp-page-heading">
-        <h1>{isService ? "خدمات urparts" : "إدارة المنتجات"}</h1>
+        <h1>{isService ? "خدمات ماي بارت" : "إدارة المنتجات"}</h1>
         <div className="pp-import-export">
           <button className="pp-import" onClick={() => setImporting(true)}>
             <FileSpreadsheet size={18} />
@@ -409,13 +405,7 @@ export default function ProductsPage({ onSessionExpired }) {
                 {section.id === "services" ? "خدمة" : "منتج"}
               </b>
             </div>
-            <Sprite
-              asset={
-                section.id === "services" && group !== "parts"
-                  ? "servicesBrown"
-                  : section.asset
-              }
-            />
+            <Sprite asset={section.asset} />
           </button>
         ))}
       </section>

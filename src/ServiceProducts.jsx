@@ -166,7 +166,7 @@ export default function ServiceProducts({ navigation, onSessionExpired }) {
   return (
     <div className="pp-page">
       <div className="pp-page-heading">
-        <h1>خدمات urparts</h1>
+        <h1>خدمات ماي بارت</h1>
       </div>
       <section className="pp-stat-panel">
         {[

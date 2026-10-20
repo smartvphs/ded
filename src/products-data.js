@@ -7,7 +7,7 @@ export const assets={
  compressor1:['03',1025,552,105,60],compressor2:['03',916,552,105,60],steeringAlt:['13',917,552,105,60]
 };
 export const imageHeights={'01':1461,'03':3381,'04':1777,'05':1726,'06':1461,'07':2088,'08':1469,'09':1992,'10':1461,'11':1611,'12':1400,'13':1509};
-export const sections=[{id:'parts',name:'سوق قطع الغيار',count:'1,240 منتج',asset:'partsCategory',color:'#e4f2ff'},{id:'oil',name:'الزيوت',count:'1,240 منتج',asset:'oilCategory',color:'#e8fff2'},{id:'tires',name:'إطارات',count:'1,240 منتج',asset:'tiresCategory',color:'#fff8e5'},{id:'services',name:'خدمات urparts',count:'50 خدمة',asset:'servicesCategory',color:'#ffe5e7'},{id:'accessories',name:'العناية والإكسسوارات',count:'1,240 منتج',asset:'accessoriesCategory',color:'#f5ecff'}];
+export const sections=[{id:'parts',name:'سوق قطع الغيار',count:'1,240 منتج',asset:'partsCategory',color:'#e4f2ff'},{id:'oil',name:'الزيوت',count:'1,240 منتج',asset:'oilCategory',color:'#e8fff2'},{id:'tires',name:'إطارات',count:'1,240 منتج',asset:'tiresCategory',color:'#fff8e5'},{id:'services',name:'خدمات ماي بارت',count:'50 خدمة',asset:'servicesCategory',color:'#ffe5e7'},{id:'accessories',name:'العناية والإكسسوارات',count:'1,240 منتج',asset:'accessoriesCategory',color:'#f5ecff'}];
 export const filters={parts:[['الكل',784],['كهرباء',142],['ميكانيكا',98],['عفشا',76],['فرامل',76],['تكييف',58],['إضاءة',45],['وقود',38]],oil:[['الكل',784],['موبيل',142],['بترومين',142],['شل',98],['اكسون',76],['معدني',76]],tires:[['الكل',784],['بريدجستون',142],['فايرستون',142],['كوسمو',98],['بيرلي',76],['لانفيجاتور',65],['يوكوهاما',50]]};
 const ratings=[14,14,14,20,55,50,55];
 export const initialProducts={
