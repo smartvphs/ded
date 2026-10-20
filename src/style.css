@@ -6,3 +6,5 @@
 .brand-logo{display:block;width:100%;max-width:213px;height:auto}.currency-amount{display:inline-flex;align-items:center;gap:5px;direction:ltr;white-space:nowrap}.riyal-icon{display:inline-block;width:18px;height:auto;flex-shrink:0;object-fit:contain}.order-price .riyal-icon{width:15px}.stat .riyal-icon{width:20px}.dark .brand-logo,.dark .riyal-icon{filter:invert(1) hue-rotate(180deg)}
 .stat b .currency-amount{font-size:inherit;font-weight:inherit;line-height:inherit;margin-top:0}
 .welcome-icon{width:19px;height:19px;object-fit:contain;display:block;flex-shrink:0}.welcome-stats>div>span{text-align:right;width:100%}
+
+.sidebar-reference-icon{display:block;flex-shrink:0;width:20px;height:20px;color:#171e2d}
