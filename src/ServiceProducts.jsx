@@ -24,10 +24,20 @@ function ServiceOrderRow({ row, onOpen }) {
     items = Array.isArray(d?.items)
       ? d.items.filter((x) => x.source === "service")
       : [],
-    names = items.map((x) => x.product_name).filter(Boolean),
-    cars = items
+    summary = Array.isArray(row.services) ? row.services : [],
+    names = (
+      summary.length
+        ? summary.map((x) => x.name || x.nameEn)
+        : items.map((x) => x.product_name)
+    ).filter(Boolean),
+    summaryCars = summary
       .map((x) => x.car?.makeNameAr ?? x.car?.makeNameEn)
-      .filter(Boolean);
+      .filter(Boolean),
+    cars = summaryCars.length
+      ? summaryCars
+      : items
+          .map((x) => x.car?.makeNameAr ?? x.car?.makeNameEn)
+          .filter(Boolean);
   return (
     <tr>
       <td>

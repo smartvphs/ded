@@ -44,7 +44,80 @@ const initial = {
   workshopLng: "",
   workingHours: {},
   isActive: true,
+  cars: [],
+  isSpecialOffer: false,
 };
+function ServiceCar({ car, makes, onChange, onRemove, removable }) {
+  const models = useAdminResource(
+    car.makeId
+      ? "/api/cars/admin/makes/" + encodeURIComponent(car.makeId) + "/models"
+      : null,
+  );
+  const select = (label, value, rows, change) => (
+    <Field label={label} icon={Car}>
+      <select
+        aria-label={label}
+        value={value || ""}
+        onChange={(e) => change(e.target.value)}
+      >
+        <option value="">-- اختر --</option>
+        {rows.map((row) => (
+          <option key={row.id} value={row.id}>
+            {row.name_ar ||
+              row.nameAr ||
+              row.name ||
+              row.name_en ||
+              row.nameEn ||
+              row.id}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+  const withCurrent = (rows, id, name) =>
+    id && !rows.some((row) => row.id === id)
+      ? [{ id, name: name || id }, ...rows]
+      : rows;
+  return (
+    <div>
+      <div className="pp-form-grid">
+        {select(
+          "السيارة",
+          car.modelId,
+          withCurrent(
+            Array.isArray(models.data?.data) ? models.data.data : [],
+            car.modelId,
+            car.modelNameAr || car.modelNameEn,
+          ),
+          (modelId) => onChange({ ...car, modelId }),
+        )}
+        {select(
+          "الشركة",
+          car.makeId,
+          withCurrent(makes, car.makeId, car.makeNameAr || car.makeNameEn),
+          (makeId) =>
+            onChange({
+              ...car,
+              makeId,
+              modelId: "",
+              modelNameAr: "",
+              modelNameEn: "",
+            }),
+        )}
+      </div>
+      <State resource={models} />
+      {removable && (
+        <button
+          className="pp-remove"
+          aria-label="حذف سيارة الخدمة"
+          onClick={onRemove}
+        >
+          <Trash2 size={16} />
+        </button>
+      )}
+    </div>
+  );
+}
 export default function ServiceEditor({ id, onBack, onSaved }) {
   const [serviceId, setServiceId] = useState(id),
     [draft, setDraft] = useState(initial),
@@ -57,7 +130,8 @@ export default function ServiceEditor({ id, onBack, onSaved }) {
     data = useAdminResource(
       id ? "/api/suppliers/admin/services/" + encodeURIComponent(id) : null,
     ),
-    categories = useAdminResource("/api/categories/admin");
+    categories = useAdminResource("/api/categories/admin"),
+    makes = useAdminResource("/api/cars/admin/makes");
   useEffect(() => {
     if (data.data) {
       const row = data.data.data;
@@ -103,6 +177,11 @@ export default function ServiceEditor({ id, onBack, onSaved }) {
         Number(draft.durationMinutes) < 1
       )
         throw new Error("أدخل مدة الخدمة بالدقائق.");
+      const cars = (draft.cars || []).filter(
+        (car) => car.makeId || car.modelId,
+      );
+      if (cars.length > 30 || cars.some((car) => !car.makeId || !car.modelId))
+        throw new Error("اختر الشركة والسيارة لكل صف؛ الحد الأقصى 30 سيارة.");
       const images = [...draft.images];
       for (let i = 0; i < images.length; i++)
         if (images[i].startsWith("data:")) {
@@ -121,6 +200,13 @@ export default function ServiceEditor({ id, onBack, onSaved }) {
         cities: draft.cities,
         aliases: draft.aliases,
         images,
+        cars: cars.map(({ makeId, modelId, yearFrom, yearTo }) => ({
+          makeId,
+          modelId,
+          ...(yearFrom != null ? { yearFrom } : {}),
+          ...(yearTo != null ? { yearTo } : {}),
+        })),
+        isSpecialOffer: Boolean(draft.isSpecialOffer),
         ...(serviceId
           ? { isActive: draft.isActive, categoryId: draft.categoryId }
           : {}),
@@ -413,10 +499,44 @@ export default function ServiceEditor({ id, onBack, onSaved }) {
                         onChange={(v) => set("cities", v)}
                       />
                     </div>
-                    <div className="pp-form-grid">
-                      {select("السيارة", "", [], () => {}, Car, true)}
-                      {select("الشركة", "", [], () => {}, Car, true)}
-                    </div>
+                    <State resource={makes} />
+                    {(draft.cars?.length ? draft.cars : [{}]).map(
+                      (car, index) => (
+                        <ServiceCar
+                          key={index}
+                          car={car}
+                          makes={
+                            Array.isArray(makes.data?.data)
+                              ? makes.data.data
+                              : []
+                          }
+                          removable={Boolean(draft.cars?.length)}
+                          onChange={(value) =>
+                            set(
+                              "cars",
+                              (draft.cars?.length ? draft.cars : [{}]).map(
+                                (row, i) => (i === index ? value : row),
+                              ),
+                            )
+                          }
+                          onRemove={() =>
+                            set(
+                              "cars",
+                              draft.cars.filter((_, i) => i !== index),
+                            )
+                          }
+                        />
+                      ),
+                    )}
+                    {draft.cars?.length > 0 && draft.cars.length < 30 && (
+                      <button
+                        className="pp-copy-link"
+                        onClick={() => set("cars", [...draft.cars, {}])}
+                      >
+                        <Plus size={16} />
+                        إضافة سيارة
+                      </button>
+                    )}
                   </Panel>
                   <Panel title="الوصف والمواصفات" className="pp-description">
                     <div className="pp-description-top">
@@ -486,8 +606,12 @@ export default function ServiceEditor({ id, onBack, onSaved }) {
                   onChange={(v) => set("isActive", v)}
                   text={draft.isActive ? "منشور" : "غير منشور"}
                 />
-                <div title="غير متاح لهذه الخدمة">
-                  <Toggle label="عرض خاص" checked={false} disabled />
+                <Toggle
+                  label="عرض خاص"
+                  checked={Boolean(draft.isSpecialOffer)}
+                  onChange={(value) => set("isSpecialOffer", value)}
+                />
+                <div title="الشحن لا ينطبق على الخدمات">
                   <Toggle label="شحن مجاني" checked={false} disabled />
                 </div>
               </Panel>

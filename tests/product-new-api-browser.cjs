@@ -72,6 +72,10 @@ const XLSX = require("xlsx");
     let svc = {
       id: "svc",
       name: "فحص موثق",
+      cars: [
+        { makeId: "make", modelId: "model", yearFrom: 2018, yearTo: 2023 },
+      ],
+      isSpecialOffer: true,
       nameEn: "Inspection",
       description: "فحص الخدمة",
       terms: "شروط محفوظة",
@@ -168,7 +172,15 @@ const XLSX = require("xlsx");
           },
         ]);
       if (path === "/api/brands") return send(r, []);
-      if (path === "/api/cars/admin/makes") return send(r, []);
+      if (path === "/api/cars/admin/makes")
+        return send(r, [
+          { id: "make", name_ar: "تويوتا" },
+          { id: "make2", name_ar: "نيسان" },
+        ]);
+      if (path === "/api/cars/admin/makes/make/models")
+        return send(r, [{ id: "model", name_ar: "كامري" }]);
+      if (path === "/api/cars/admin/makes/make2/models")
+        return send(r, [{ id: "model2", name_ar: "صني" }]);
       if (path === "/api/suppliers/admin")
         return send(r, { items: [], total: 0 });
       if (path === "/api/products/admin/import/template")
@@ -366,6 +378,14 @@ const XLSX = require("xlsx");
           [
             {
               id: "order-service",
+              services: [
+                {
+                  productId: "svc",
+                  name: "طلب فحص فعلي",
+                  quantity: 1,
+                  car: { makeNameAr: "تويوتا" },
+                },
+              ],
               customer_name: "عميل خدمة",
               customer_phone: "0500000000",
               total: 150,
@@ -401,6 +421,8 @@ const XLSX = require("xlsx");
         assert.ok(body.images[0].startsWith("https://"));
         assert.equal(body.aliases[0], "فحص جديد");
         assert.equal(body.cities[0], "جدة");
+        assert.deepEqual(body.cars, [{ makeId: "make2", modelId: "model2" }]);
+        assert.equal(body.isSpecialOffer, true);
         svc = {
           ...body,
           id: "svc-new",
@@ -679,6 +701,27 @@ const XLSX = require("xlsx");
       await p.getByLabel("مدة الخدمة بالدقائق", { exact: true }).count(),
       0,
     );
+    assert.equal(
+      await p.getByLabel("الشركة", { exact: true }).inputValue(),
+      "make",
+    );
+    assert.equal(
+      await p.getByLabel("السيارة", { exact: true }).inputValue(),
+      "model",
+    );
+    assert.equal(
+      await p
+        .getByRole("switch", { name: "عرض خاص", exact: true })
+        .getAttribute("aria-checked"),
+      "true",
+    );
+    await p.getByRole("switch", { name: "عرض خاص", exact: true }).click();
+    assert.equal(
+      await p
+        .getByRole("switch", { name: "شحن مجاني", exact: true })
+        .isDisabled(),
+      true,
+    );
     const mainBox = await p.locator(".pp-editor-body").boundingBox(),
       asideBox = await p.locator(".pp-editor-aside").boundingBox();
     assert.ok(asideBox.x < mainBox.x, "reference preview stays on the left");
@@ -692,6 +735,45 @@ const XLSX = require("xlsx");
       .filter({ hasText: "تم حفظ الخدمة على الخادم" })
       .waitFor();
     assert.equal(svc.name, "فحص بعد التعديل");
+    assert.deepEqual(svc.cars, [
+      { makeId: "make", modelId: "model", yearFrom: 2018, yearTo: 2023 },
+    ]);
+    assert.equal(svc.isSpecialOffer, false);
+    assert.equal(
+      calls
+        .filter(
+          (x) =>
+            x.path === "/api/suppliers/admin/services/svc" && x.m === "PATCH",
+        )
+        .at(-1).body.isFreeShipping,
+      undefined,
+    );
+    await p.getByRole("button", { name: "إضافة سيارة", exact: true }).click();
+    await p.getByLabel("الشركة", { exact: true }).nth(1).selectOption("make2");
+    await p
+      .getByLabel("السيارة", { exact: true })
+      .nth(1)
+      .selectOption("model2");
+    await p.getByRole("button", { name: "حفظ الخدمة", exact: true }).click();
+    await p
+      .getByRole("status")
+      .filter({ hasText: "تم حفظ الخدمة على الخادم" })
+      .waitFor();
+    assert.equal(svc.cars.length, 2);
+    assert.equal(svc.cars[1].modelId, "model2");
+    await p
+      .getByRole("button", { name: "حذف سيارة الخدمة", exact: true })
+      .nth(1)
+      .click();
+    await p
+      .getByRole("button", { name: "حذف سيارة الخدمة", exact: true })
+      .click();
+    await p.getByRole("button", { name: "حفظ الخدمة", exact: true }).click();
+    await p
+      .getByRole("status")
+      .filter({ hasText: "تم حفظ الخدمة على الخادم" })
+      .waitFor();
+    assert.deepEqual(svc.cars, []);
     assert.equal(svc.terms, "شروط محفوظة");
     assert.equal(svc.workshopAddress, "عنوان محفوظ");
     assert.ok(
@@ -713,6 +795,9 @@ const XLSX = require("xlsx");
       .fill("خدمة منصة جديدة");
     await p.getByLabel("الوصف", { exact: true }).fill("خدمة جديدة موثقة");
     await p.getByLabel("السعر", { exact: true }).fill("120");
+    await p.getByLabel("الشركة", { exact: true }).selectOption("make2");
+    await p.getByLabel("السيارة", { exact: true }).selectOption("model2");
+    await p.getByRole("switch", { name: "عرض خاص", exact: true }).click();
     await p
       .getByLabel("التصنيف الفرعي", { exact: true })
       .selectOption("service-sub");
