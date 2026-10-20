@@ -156,7 +156,7 @@ export default function ServiceEditor({ id, onBack, onSaved }) {
           }
         }
       } catch (e) {
-        if (!serviceId && (!e.status || e.status >= 500))
+        if (!serviceId && !nextId && (!e.status || e.status >= 500))
           uncertain.current = true;
         throw e;
       }

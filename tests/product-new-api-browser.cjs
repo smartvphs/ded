@@ -33,7 +33,8 @@ const XLSX = require("xlsx");
     let failRelated = true,
       failReview = true,
       failAi = true;
-    let imported = 0;
+    let imported = 0,
+      failInactive = true;
     const p1 = {
         id: "p1",
         name: "منتج أساسي",
@@ -414,7 +415,18 @@ const XLSX = require("xlsx");
         path === "/api/suppliers/admin/services/svc-new"
       ) {
         if (m === "PATCH") {
-          assert.equal(body.name, "فحص بعد التعديل");
+          if (
+            path.endsWith("/svc-new") &&
+            Object.keys(body).length === 1 &&
+            failInactive
+          ) {
+            failInactive = false;
+            return send(r, null, null, 503, "تعذر تحديث الحالة مؤقتًا");
+          }
+          assert.equal(
+            body.name,
+            path.endsWith("/svc-new") ? "خدمة منصة جديدة" : "فحص بعد التعديل",
+          );
           assert.equal(body.terms, undefined);
           assert.equal(body.workingHours, undefined);
           assert.equal(body.workshopAddress, undefined);
@@ -716,12 +728,32 @@ const XLSX = require("xlsx");
       ),
     });
     await p.locator(".pp-thumbnails img").waitFor();
+    await p.getByRole("switch", { name: "الحالة", exact: true }).click();
+    await p.getByRole("button", { name: "حفظ الخدمة", exact: true }).click();
+    await p
+      .getByRole("alert")
+      .filter({ hasText: "تم إنشاء الخدمة لكن لم يكتمل تحديث حالتها" })
+      .waitFor();
+    assert.equal(
+      await p
+        .getByRole("button", { name: "حفظ الخدمة", exact: true })
+        .isEnabled(),
+      true,
+    );
     await p.getByRole("button", { name: "حفظ الخدمة", exact: true }).click();
     await p
       .getByRole("status")
       .filter({ hasText: "تم حفظ الخدمة على الخادم" })
       .waitFor();
     assert.equal(svc.id, "svc-new");
+    assert.equal(svc.isActive, false);
+    assert.equal(
+      calls.filter(
+        (x) =>
+          x.path === "/api/suppliers/admin/platform-services" && x.m === "POST",
+      ).length,
+      1,
+    );
     await p.setViewportSize({ width: 390, height: 844 });
     assert.equal(
       await p.evaluate(() => document.documentElement.scrollWidth > innerWidth),
