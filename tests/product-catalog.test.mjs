@@ -14,3 +14,18 @@ test('detail fields enrich sparse list rows without inventing images, reviews, q
  const merged=mergeProductDetails({id:'p',thumbnail:null,brand_name:null},{id:'p',images:[{image_url:'https://example.com/p.png'}],reviews_count:0,quality_tier:null,compatibility:[{make_id:'bmw',make_name_ar:'بي ام دبليو',make_name_en:'BMW'},{make_id:'bmw',make_name_ar:'بي ام دبليو'}]});
  assert.equal(merged.thumbnail,'https://example.com/p.png');assert.equal(merged.reviews_count,0);assert.equal(merged.quality_tier,null);assert.equal(merged.brand_name,null);assert.equal(compatibilityMakes(merged.compatibility).length,1);assert.deepEqual(compatibilityMakes(null),[]);assert.equal(mergeProductDetails({thumbnail:null},{images:null}).thumbnail,null);
 });
+
+test('legacy and current specification keys read the same value, including camelCase values',async()=>{
+ const {readSpecification}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+ for(const key of ['rim','rim_size','tire_rim','tire_rim_size','مقاس الجنط'])assert.equal(readSpecification([{specName:key,specValue:'17'}],'tire_rim_size').value,'17');
+ assert.equal(readSpecification([{spec_name:'viscosity',spec_value:'5W-30'},{specName:'oil_viscosity',specValue:'5W-30'}],'oil_viscosity').value,'5W-30');
+ assert.equal(readSpecification([{spec_name:'height',spec_value:'55'}],'tire_aspect_ratio').value,'55');
+ assert.equal(readSpecification([{spec_name:'installation_type',spec_value:'داخلي'}],'installation_type').value,'داخلي');
+});
+test('conflicting specifications are explicit; editing replaces all aliases and preserves unrelated fields',async()=>{
+ const {readSpecification,writeSpecification}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+ const specs=[{specName:'rim',specValue:'17'},{specName:'tire_rim_size',specValue:'16'},{specName:'rim',specValue:'16'},{specName:'custom',specValue:'preserve'}];
+ const result=readSpecification(specs,'tire_rim_size');assert.equal(result.conflict,true);assert.equal(result.value,'');assert.deepEqual(result.values,['17','16']);
+ const resolved=writeSpecification(specs,'tire_rim_size','18');assert.deepEqual(resolved,[{specName:'custom',specValue:'preserve'},{specName:'rim',specValue:'18'}]);assert.equal(readSpecification(resolved,'tire_rim_size').value,'18');assert.deepEqual(writeSpecification(specs,'tire_rim_size',''),[{specName:'custom',specValue:'preserve'}]);
+ assert.equal(readSpecification([{spec_name:'rim',spec_value:17}],'tire_rim_size',['16']).conflict,true);
+});

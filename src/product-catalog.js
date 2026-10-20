@@ -33,3 +33,30 @@ export function makeSprite(make){
  const name=(make.nameEn||make.name||'').trim().toLowerCase();
  return ({bmw:'bmw','بي ام دبليو':'bmw',fiat:'fiat',فيات:'fiat',lamborghini:'lamborghini',لامبورغيني:'lamborghini',mercedes:'mercedes','mercedes-benz':'mercedes',مرسيدس:'mercedes',toyota:'toyota',تويوتا:'toyota'})[name]||null;
 }
+
+// Catalog fields have both legacy and current names in stored products.
+// Never infer a specification from the product's marketing name or pick an
+// arbitrary value when several persisted rows disagree.
+export const specificationAliases={
+ oil_type:['oil_type','نوع الزيت'],
+ oil_viscosity:['oil_viscosity','viscosity','اللزوجة','لزوجة الزيت'],
+ oil_pack_size:['oil_pack_size','pack_size','capacity','حجم العبوة'],
+ tire_rim_size:['tire_rim_size','rim_size','tire_rim','rim','مقاس الجنط'],
+ tire_width:['tire_width','width','العرض'],
+ tire_aspect_ratio:['tire_aspect_ratio','aspect_ratio','aspect','height','الإرتفاع','الارتفاع'],
+ production_week:['production_week','إسبوع الإنتاج','أسبوع الإنتاج'],
+ installation_type:['installation_type','installation','نوع التركيب','نوع الاكسسوار']
+};
+const specKey=s=>String(s.spec_name??s.specName??'').trim().toLowerCase();
+const aliasesFor=key=>new Set((specificationAliases[key]||[key]).map(k=>k.toLowerCase()));
+export function readSpecification(specifications,key,direct=[]){
+ const aliases=aliasesFor(key);
+ const values=[...new Set([...direct,...(Array.isArray(specifications)?specifications:[]).filter(s=>s&&aliases.has(specKey(s))).map(s=>s.spec_value??s.specValue)].filter(v=>v!==null&&v!==undefined&&String(v).trim()!=='').map(v=>String(v).trim()))];
+ return {value:values.length===1?values[0]:'',conflict:values.length>1,values};
+}
+export function writeSpecification(specifications,key,value){
+ const aliases=aliasesFor(key),existing=specifications.find(s=>aliases.has(specKey(s)));
+ const remaining=specifications.filter(s=>!aliases.has(specKey(s)));
+ // Reuse the original persisted field name, but replace all of its aliases.
+ return String(value).trim()?[...remaining,{specName:existing?.specName??existing?.spec_name??key,specValue:String(value)}]:remaining;
+}
