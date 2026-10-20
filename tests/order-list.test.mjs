@@ -17,8 +17,8 @@ test('lookup pagination fails instead of looping when the server ignores offset'
  globalThis.orderTestRequest=async()=>({data:{items:Array.from({length:100},(_,i)=>({id:'s'+i})),total:300}});
  await assert.rejects(supplierOptions(),/باقي الموردين/);
 });
-test('creation sends only catalog IDs and quantities, never local prices, and requires a customer address',()=>{
+test('creation sends only catalog IDs and quantities, never local prices, and supports the server default address',()=>{
  const form={userId:'customer-1',addressId:'address-1',paymentMethod:'cash',couponCode:' SAVE ',adminNotes:' ملاحظة ',items:[{productId:'p1',variantId:'v1',quantity:'2',price:1,name:'local preview'}]};
  assert.deepEqual(createOrderBody(form),{userId:'customer-1',addressId:'address-1',paymentMethod:'cash',couponCode:'SAVE',adminNotes:'ملاحظة',items:[{productId:'p1',variantId:'v1',quantity:2}]});
- assert.throws(()=>createOrderBody({...form,addressId:''}),/العنوان|عنوان/);assert.throws(()=>createOrderBody({...form,items:[{productId:'p1',quantity:1.5}]}),/كمية/);
+ assert.equal('addressId' in createOrderBody({...form,addressId:''}),false);assert.throws(()=>createOrderBody({...form,items:[{productId:'p1',quantity:1.5}]}),/كمية/);
 });

@@ -22,8 +22,8 @@ export async function supplierOptions(signal) {
   }
 }
 export function createOrderBody({userId, addressId, items, paymentMethod, couponCode, adminNotes}) {
-  if (!userId || !addressId) throw new ApiError('اختر العميل وعنوان التوصيل أولًا.', 0);
+  if (!userId) throw new ApiError('اختر العميل أولًا.', 0);
   if (!items.length || items.some(i => !i.productId || !Number.isSafeInteger(Number(i.quantity)) || Number(i.quantity) < 1)) throw new ApiError('أضف منتجًا وحدد كمية صحيحة لكل منتج.', 0);
-  return {userId, addressId, items: items.map(i => ({productId: i.productId, ...(i.variantId ? {variantId: i.variantId} : {}), quantity: Number(i.quantity)})),
+  return {userId, ...(addressId?{addressId}:{}), items: items.map(i => ({productId: i.productId, ...(i.variantId ? {variantId: i.variantId} : {}), quantity: Number(i.quantity)})),
     paymentMethod, ...(couponCode?.trim() ? {couponCode: couponCode.trim()} : {}), adminNotes: adminNotes?.trim() || ''};
 }

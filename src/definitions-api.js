@@ -47,3 +47,12 @@ export function testimonialBody({title, description, rating, avatarUrl}) {
   if (!name || name.length > 100 || !comment || comment.length > 1000 || !Number.isInteger(rating) || rating < 1 || rating > 5) throw new ApiError('أدخل اسم العميل (حتى 100 حرف) والتعليق (حتى 1000 حرف) وتقييمًا من 1 إلى 5.', 0);
   return {customerName: name, comment, rating, ...(avatarUrl ? {avatarUrl} : {})};
 }
+export function purchaseBody({productId,city,district,addressText}){
+ if(!productId||!city.trim())throw new ApiError('اختر المنتج وأدخل المدينة أولًا.',0);
+ return {productId,city:city.trim(),district:district.trim()||null,addressText:addressText.trim()||null};
+}
+export function purchaseItem(row){
+ return {...row,id:row.id,title:row.productName??row.product_name??'',image:row.thumbnail??null,
+  productId:row.productId??row.product_id,city:row.city||'',district:row.district||'',addressText:row.addressText??row.address_text??'',
+  description:[row.city,row.district].filter(Boolean).join(' - '),active:row.isActive??row.is_active??true,available:row.productAvailable??row.product_available??true};
+}
