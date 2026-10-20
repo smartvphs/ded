@@ -757,9 +757,15 @@ export default function ProductsPage({ onSessionExpired }) {
           {detail.data && (
             <>
               <h3>{detail.data.data.name}</h3>
-              {detail.data.data.images?.[0]?.image_url && (
+              {(typeof detail.data.data.images?.[0] === "string"
+                ? detail.data.data.images[0]
+                : detail.data.data.images?.[0]?.image_url) && (
                 <img
-                  src={detail.data.data.images[0].image_url}
+                  src={
+                    typeof detail.data.data.images[0] === "string"
+                      ? detail.data.data.images[0]
+                      : detail.data.data.images[0].image_url
+                  }
                   alt=""
                   style={{
                     maxWidth: "100%",
