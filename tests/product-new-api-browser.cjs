@@ -73,6 +73,9 @@ const XLSX = require("xlsx");
       name: "فحص موثق",
       nameEn: "Inspection",
       description: "فحص الخدمة",
+      terms: "شروط محفوظة",
+      workshopAddress: "عنوان محفوظ",
+      workingHours: { sunday: { from: "09:00", to: "17:00" } },
       categoryId: "service-root",
       subcategoryId: "service-sub",
       price: 150,
@@ -412,6 +415,9 @@ const XLSX = require("xlsx");
       ) {
         if (m === "PATCH") {
           assert.equal(body.name, "فحص بعد التعديل");
+          assert.equal(body.terms, undefined);
+          assert.equal(body.workingHours, undefined);
+          assert.equal(body.workshopAddress, undefined);
           Object.assign(svc, body);
         }
         return send(r, svc);
@@ -655,12 +661,26 @@ const XLSX = require("xlsx");
     await p
       .getByLabel("الإسم الأساسي", { exact: true })
       .fill("فحص بعد التعديل");
+    assert.equal(await p.getByLabel("خط العرض", { exact: true }).count(), 0);
+    assert.equal(
+      await p.getByLabel("مدة الخدمة بالدقائق", { exact: true }).count(),
+      0,
+    );
+    const mainBox = await p.locator(".pp-editor-body").boundingBox(),
+      asideBox = await p.locator(".pp-editor-aside").boundingBox();
+    assert.ok(asideBox.x < mainBox.x, "reference preview stays on the left");
+    await p.screenshot({
+      path: "/tmp/service-restored-desktop.png",
+      fullPage: true,
+    });
     await p.getByRole("button", { name: "حفظ الخدمة", exact: true }).click();
     await p
       .getByRole("status")
       .filter({ hasText: "تم حفظ الخدمة على الخادم" })
       .waitFor();
     assert.equal(svc.name, "فحص بعد التعديل");
+    assert.equal(svc.terms, "شروط محفوظة");
+    assert.equal(svc.workshopAddress, "عنوان محفوظ");
     assert.ok(
       calls.some(
         (x) =>

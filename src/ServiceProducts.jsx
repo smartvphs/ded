@@ -1,5 +1,13 @@
 import React, { useState } from "react";
-import { Plus } from "lucide-react";
+import {
+  Plus,
+  Search,
+  ChevronDown,
+  FileText,
+  CheckCircle2,
+  TriangleAlert,
+  Shuffle,
+} from "lucide-react";
 import { adminRequest, queryString } from "./admin-api";
 import useAdminResource from "./use-admin-resource";
 import { Modal, Pager } from "./orders-ui";
@@ -159,19 +167,18 @@ export default function ServiceProducts({ navigation, onSessionExpired }) {
     <div className="pp-page">
       <div className="pp-page-heading">
         <h1>خدمات urparts</h1>
-        <button className="pp-button" onClick={() => setEditing({})}>
-          <Plus size={17} />
-          إضافة خدمة
-        </button>
       </div>
       <section className="pp-stat-panel">
         {[
-          [orders.data?.meta?.total, "إجمالي طلبات الخدمات", "blue"],
-          [counts.pending, "طلبات جديدة", "green"],
-          [counts.confirmed, "قيد التنفيذ", "amber"],
-          [counts.delivered, "مكتملة", "red"],
-        ].map(([n, label, color]) => (
+          [orders.data?.meta?.total, "إجمالي طلبات الخدمات", "blue", FileText],
+          [counts.pending, "طلبات جديدة", "green", CheckCircle2],
+          [counts.confirmed, "قيد التنفيذ", "amber", TriangleAlert],
+          [counts.delivered, "مكتملة", "red", Shuffle],
+        ].map(([n, label, color, Icon]) => (
           <div key={label} className={"pp-stat " + color}>
+            <span className="pp-stat-icon">
+              <Icon size={21} />
+            </span>
             <b>{n ?? "—"}</b>
             <span>{label}</span>
           </div>
@@ -202,37 +209,49 @@ export default function ServiceProducts({ navigation, onSessionExpired }) {
       </div>
       <section className="pp-list-panel">
         <div className="pp-list-tools">
-          <input
-            aria-label="البحث في الخدمات"
-            value={search}
-            placeholder={
-              tab === "orders" ? "اسم العميل أو رقم الطلب" : "اسم الخدمة"
-            }
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {tab === "orders" && (
-            <select
-              aria-label="حالة طلب الخدمة"
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                setPage(1);
-              }}
-            >
-              <option value="">كل الحالات</option>
-              {[
-                ["pending", "جديد"],
-                ["confirmed", "قيد التنفيذ"],
-                ["shipped", "قيد الشحن"],
-                ["delivered", "مكتمل"],
-                ["cancelled", "ملغي"],
-              ].map(([v, label]) => (
-                <option key={v} value={v}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          )}
+          <div className="pp-search-status">
+            <label className="pp-search">
+              <input
+                aria-label="البحث في الخدمات"
+                value={search}
+                placeholder={
+                  tab === "orders" ? "اسم العميل أو رقم الطلب" : "اسم الخدمة"
+                }
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              <Search size={19} />
+            </label>{" "}
+            {tab === "orders" && (
+              <label className="pp-status">
+                <select
+                  aria-label="حالة طلب الخدمة"
+                  value={status}
+                  onChange={(e) => {
+                    setStatus(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="">كل الحالات</option>
+                  {[
+                    ["pending", "جديد"],
+                    ["confirmed", "قيد التنفيذ"],
+                    ["shipped", "قيد الشحن"],
+                    ["delivered", "مكتمل"],
+                    ["cancelled", "ملغي"],
+                  ].map(([v, label]) => (
+                    <option key={v} value={v}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={15} />
+              </label>
+            )}
+          </div>
+          <button className="pp-button" onClick={() => setEditing({})}>
+            <Plus size={19} />
+            إضافة خدمة
+          </button>
         </div>
         <State resource={data} />
         <div className="pp-table-scroll">
