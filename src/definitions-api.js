@@ -35,3 +35,15 @@ export async function uploadContentImage(dataUrl, type) {
   if (!response.ok || typeof uploaded.secure_url !== 'string' || !uploaded.secure_url.startsWith('https://')) throw new ApiError('تعذر رفع الصورة. حاول مرة أخرى.', response.status);
   return uploaded.secure_url;
 }
+
+export function reviewItem(row, manual) {
+  return {...row, id: row.id, name: manual ? row.customerName ?? row.customer_name ?? '' : row.reviewer_name ?? '',
+    description: row.comment ?? '', rating: Number(row.rating) || 0,
+    image: manual ? row.avatarUrl ?? row.avatar_url ?? null : null,
+    active: manual ? (row.isActive ?? row.is_active ?? true) : row.status !== 'hidden', manual};
+}
+export function testimonialBody({title, description, rating, avatarUrl}) {
+  const name = title.trim(), comment = description.trim();
+  if (!name || name.length > 100 || !comment || comment.length > 1000 || !Number.isInteger(rating) || rating < 1 || rating > 5) throw new ApiError('أدخل اسم العميل (حتى 100 حرف) والتعليق (حتى 1000 حرف) وتقييمًا من 1 إلى 5.', 0);
+  return {customerName: name, comment, rating, ...(avatarUrl ? {avatarUrl} : {})};
+}
