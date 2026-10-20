@@ -36,6 +36,7 @@ import {
   qualityTierOptions,
 } from "./product-editor-model";
 import { readSpecification, writeSpecification } from "./product-catalog";
+import { catalogOptions } from "./catalog-options";
 import {
   RelatedProducts,
   ProductReviews,
@@ -63,6 +64,15 @@ function Choice({ label, rows = [], value, onChange, disabled = false }) {
     </Field>
   );
 }
+function CatalogChoice({ fields, fieldKey, categoryId, label, value, onChange, type = "text" }) {
+  const rows = catalogOptions(fields, fieldKey, categoryId, value);
+  return rows ? (
+    <Choice label={label} rows={rows} value={value ?? ""} onChange={onChange} />
+  ) : (
+    <Input label={label} aria-label={label} type={type} value={value ?? ""}
+      onChange={(event) => onChange(event.target.value)} />
+  );
+}
 function LookupMessage({ resource }) {
   return resource.error ? (
     <p role="alert">
@@ -73,7 +83,7 @@ function LookupMessage({ resource }) {
     <p role="status">جارٍ تحميل الخيارات…</p>
   ) : null;
 }
-function CompatibilityRow({ row, onChange, onRemove, makes }) {
+function CompatibilityRow({ row, onChange, onRemove, makes, fields }) {
   const models = useAdminResource(
     row.makeId
       ? "/api/cars/admin/makes/" + encodeURIComponent(row.makeId) + "/models"
@@ -102,14 +112,9 @@ function CompatibilityRow({ row, onChange, onRemove, makes }) {
           ["yearFrom", "من سنة"],
           ["yearTo", "إلى سنة"],
         ].map(([k, label]) => (
-          <Input
-            key={k}
-            aria-label={label}
-            label={label}
+          <CatalogChoice key={k} fields={fields} fieldKey={k} label={label}
             type={k.startsWith("year") ? "number" : "text"}
-            value={row[k]}
-            onChange={(e) => set(k, e.target.value)}
-          />
+            value={row[k]} onChange={(value) => set(k, value)} />
         ))}
       </div>
       <LookupMessage resource={models} />
@@ -146,6 +151,8 @@ export default function ProductEditor({
       ? null
       : "/api/products/admin/" + encodeURIComponent(product.id),
   );
+  const catalog = useAdminResource("/api/catalog-fields");
+  const fields = catalog.data?.data;
   const categories = useAdminResource("/api/categories/admin"),
     brands = useAdminResource(
       "/api/brands?category=" +
@@ -590,11 +597,14 @@ export default function ProductEditor({
                         value={draft.condition}
                         onChange={(v) => set("condition", v)}
                       />
-                      {input("countryOfOrigin", "بلد الصنع")}
-                      {input("manufactureYear", "سنة الإنتاج", "number")}
+                      <CatalogChoice fields={fields} fieldKey="country_of_origin" categoryId={draft.categoryId}
+                        label="بلد الصنع" value={draft.countryOfOrigin} onChange={(value) => set("countryOfOrigin", value)} />
+                      <CatalogChoice fields={fields} fieldKey="production_year" categoryId={draft.categoryId}
+                        label="سنة الإنتاج" type="number" value={draft.manufactureYear} onChange={(value) => set("manufactureYear", value)} />
                     </div>
                     <LookupMessage resource={categories} />
                     <LookupMessage resource={brands} />
+                    <LookupMessage resource={catalog} />
                     {attributes.length > 0 && (
                       <div className="pp-form-grid">
                         {attributes.map(([key, label]) => {
@@ -604,17 +614,8 @@ export default function ProductEditor({
                           );
                           return (
                             <div key={key}>
-                              <Input
-                                label={label}
-                                aria-label={label}
-                                value={spec.value}
-                                placeholder={
-                                  spec.conflict ? "اختر القيمة الصحيحة" : ""
-                                }
-                                onChange={(e) =>
-                                  setAttribute(key, e.target.value)
-                                }
-                              />
+                              <CatalogChoice fields={fields} fieldKey={key} categoryId={draft.categoryId}
+                                label={label} value={spec.value} onChange={(value) => setAttribute(key, value)} />
                               {spec.conflict && (
                                 <p role="alert">
                                   {label}: قيم متعارضة ({spec.values.join("، ")}
@@ -643,6 +644,7 @@ export default function ProductEditor({
                         <CompatibilityRow
                           key={i}
                           row={row}
+                          fields={fields}
                           makes={
                             Array.isArray(makes.data?.data)
                               ? makes.data.data

@@ -449,6 +449,7 @@ const XLSX = require("xlsx");
         assert.ok(row, "Unknown product " + path);
         return send(r, { ...row, qualities, variants: row.variants || [] });
       }
+      if (path === "/api/catalog-fields" && m === "GET") return send(r, []);
       throw new Error("Unexpected " + m + " " + path);
     });
     await c.route("https://api.cloudinary.com/**", (r) =>
