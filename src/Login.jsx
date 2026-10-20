@@ -1,3 +1,118 @@
-import React,{useState,useEffect}from'react';import{Mail,LockKeyhole,Eye,EyeOff,LogIn,ShieldCheck,ArrowRight,LoaderCircle}from'lucide-react';import{requestLogin,verifyLogin,resendLoginCode,setAuthSession}from'./auth-api';import './login.css';
-function normalizeCode(value){return value.replace(/[٠-٩]/g,c=>String(c.charCodeAt(0)-1632)).replace(/[۰-۹]/g,c=>String(c.charCodeAt(0)-1776)).replace(/[^0-9]/g,'').slice(0,8)}
-export default function Login({onLogin}){const[email,setEmail]=useState(''),[password,setPassword]=useState(''),[visible,setVisible]=useState(false),[error,setError]=useState(''),[busy,setBusy]=useState(false),[challengeId,setChallengeId]=useState(null),[code,setCode]=useState(''),[challenge,setChallenge]=useState(null),[now,setNow]=useState(Date.now()),[notice,setNotice]=useState(''),[resending,setResending]=useState(false);const otp=Boolean(challengeId);useEffect(()=>{if(!challengeId)return;setNow(Date.now());const timer=setInterval(()=>setNow(Date.now()),1000);return ()=>clearInterval(timer)},[challengeId]);const expiration=challenge?.expiresAt?Date.parse(challenge.expiresAt):NaN;const remaining=Number.isFinite(expiration)?Math.max(0,Math.ceil((expiration-now)/1000)):null;const expired=remaining===0;const resendTime=challenge?.resendAvailableAt?Date.parse(challenge.resendAvailableAt):NaN;const resendWait=Number.isFinite(resendTime)?Math.max(0,Math.ceil((resendTime-now)/1000)):0;const resendExhausted=challenge?.resendsRemaining===0;async function resend(){if(busy||resendWait>0||resendExhausted)return;setResending(true);setBusy(true);setError('');setNotice('');try{const result=await resendLoginCode(challengeId);setChallenge(prev=>({...prev,...Object.fromEntries(Object.entries(result).filter(([,v])=>v!==undefined)),resendsRemaining:result.resendsRemaining??(Number.isInteger(prev?.resendsRemaining)?Math.max(0,prev.resendsRemaining-1):null),expiresAt:result.expiresAt??null,resendAvailableAt:result.resendAvailableAt??new Date(Date.now()+60000).toISOString()}));setChallengeId(result.challengeId);setNow(Date.now());setCode('');setNotice('تم طلب إعادة إرسال رمز التحقق بنجاح.')}catch(err){setError(err.message||'تعذر إعادة إرسال رمز التحقق.')}finally{setBusy(false);setResending(false)}}async function submit(e){e.preventDefault();if(busy)return;setNotice('');setError('');setBusy(true);try{if(!otp){const result=await requestLogin(email.trim(),password);setChallenge(result);setNow(Date.now());setChallengeId(result.challengeId);setPassword('');setVisible(false);setCode('')}else{if(expired)throw new Error('انتهت صلاحية رمز التحقق. ارجع لتسجيل الدخول للحصول على رمز جديد.');if(!/^[0-9]{4,8}$/.test(code))throw new Error('أدخل رمز التحقق كاملًا.');const session=await verifyLogin(challengeId,code);setAuthSession(session);setCode('');onLogin(session)}}catch(err){setError(err.message||'تعذر تسجيل الدخول. حاول مرة أخرى.')}finally{setBusy(false)}}return <div className="login-page"><div className="login-brand-panel"><img src="/images/brand/logo.png" alt="MY PART — ماي بارت"/><div><span className="login-brand-kicker">MY PART ADMIN</span><h1>لوحة تحكم المنصة</h1><p>إدارة الطلبات والمنتجات والموردين<br/>من مكان واحد.</p></div><span className="login-brand-footer">جميع الحقوق محفوظة 2026 © MY PART</span></div><main className="login-main"><section className="login-card"><div className="login-mobile-logo"><img src="/images/brand/logo.png" alt="MY PART"/></div><span className="login-symbol">{otp?<ShieldCheck size={25}/>:<LockKeyhole size={25}/>}</span><h2>{otp?'التحقق من تسجيل الدخول':'تسجيل الدخول'}</h2><p className="login-intro">{otp?<>أدخل رمز التحقق لإكمال تسجيل الدخول للحساب <span className="otp-email" dir="ltr">{challenge?.maskedEmail||email.trim()}</span></>:'أدخل البريد الإلكتروني وكلمة المرور للدخول إلى لوحة التحكم.'}</p><form onSubmit={submit} aria-busy={busy}>{!otp?<><label className="login-field"><span>البريد الإلكتروني</span><div><Mail size={19}/><input type="email" name="email" autoComplete="username" placeholder="admin@example.com" value={email} onChange={e=>{setEmail(e.target.value);setError('')}} required dir="ltr" disabled={busy}/></div></label><label className="login-field"><span>كلمة المرور</span><div><LockKeyhole size={19}/><input type={visible?'text':'password'} name="password" autoComplete="current-password" placeholder="أدخل كلمة المرور" value={password} onChange={e=>{setPassword(e.target.value);setError('')}} required disabled={busy}/><button type="button" aria-label={visible?'إخفاء كلمة المرور':'إظهار كلمة المرور'} disabled={busy} onClick={()=>setVisible(!visible)}>{visible?<EyeOff size={19}/>:<Eye size={19}/>}</button></div></label></>:<label className="login-field otp-field"><span>رمز التحقق OTP</span><div><ShieldCheck size={20}/><input key={challengeId} type="text" name="otp" inputMode="numeric" autoComplete="one-time-code" aria-label="رمز التحقق OTP" placeholder="••••••" value={code} onChange={e=>{setCode(normalizeCode(e.target.value));setError('')}} required minLength={4} maxLength={8} pattern="[0-9]{4,8}" dir="ltr" disabled={busy} autoFocus/></div></label>}{otp&&remaining!==null&&<p className={'otp-expiry '+(expired?'expired':'')} role="status">{expired?'انتهت صلاحية رمز التحقق. ارجع لتسجيل الدخول للحصول على رمز جديد.':<>صلاحية الكود: <b dir="ltr">{String(Math.floor(remaining/60)).padStart(2,'0')}:{String(remaining%60).padStart(2,'0')}</b></>}</p>}{notice&&<p className="otp-notice" role="status">{notice}</p>}{error&&<p className="login-error" role="alert">{error}</p>}<button className="login-submit" type="submit" disabled={busy||expired}>{busy?<><LoaderCircle className="auth-spinner" size={19}/>{resending?'جارٍ إعادة الإرسال...':otp?'جارٍ التحقق...':'جارٍ تسجيل الدخول...'}</>:<>{otp?'تأكيد رمز التحقق':'تسجيل الدخول'}{otp?<ShieldCheck size={19}/>:<LogIn size={19}/>}</>}</button>{otp&&<div className="otp-resend"><button type="button" onClick={resend} disabled={busy||resendWait>0||resendExhausted}>{resending?'جارٍ إعادة الإرسال...':resendExhausted?'نفدت محاولات إعادة الإرسال':resendWait>0?`إعادة الإرسال بعد ${resendWait} ثانية`:'إعادة إرسال رمز التحقق'}</button>{Number.isInteger(challenge?.resendsRemaining)&&<small>المحاولات المتبقية: {challenge.resendsRemaining}</small>}</div>}{otp&&<button className="otp-back" type="button" disabled={busy} onClick={()=>{setChallengeId(null);setChallenge(null);setCode('');setError('');setNotice('')}}><ArrowRight size={16}/>الرجوع لتسجيل الدخول</button>}</form></section></main></div>}
+import React, {useState,useEffect,useRef} from 'react';
+import {EyeOff,ArrowLeft,ChevronRight,LoaderCircle,TriangleAlert} from 'lucide-react';
+import {requestLogin,verifyLogin,resendLoginCode,setAuthSession} from './auth-api';
+import {LoginArt,LoginHero} from './LoginArt';
+import './login.css';
+
+function normalizeCode(value) {
+  return value.replace(/[٠-٩]/g,c=>String(c.charCodeAt(0)-1632)).replace(/[۰-۹]/g,c=>String(c.charCodeAt(0)-1776)).replace(/[^0-9]/g,'').slice(0,6);
+}
+
+export default function Login({onLogin}) {
+  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[visible,setVisible]=useState(false);
+  const [error,setError]=useState(''),[fieldErrors,setFieldErrors]=useState({}),[busy,setBusy]=useState(false);
+  const [challengeId,setChallengeId]=useState(null),[challenge,setChallenge]=useState(null),[digits,setDigits]=useState(Array(6).fill(''));
+  const [now,setNow]=useState(Date.now()),[notice,setNotice]=useState(''),[resending,setResending]=useState(false);
+  const digitRefs=useRef([]);
+  const otp=Boolean(challengeId);
+  useEffect(()=>{
+    if(!challengeId)return;
+    setNow(Date.now());
+    digitRefs.current[0]?.focus();
+    const timer=setInterval(()=>setNow(Date.now()),1000);
+    return()=>clearInterval(timer);
+  },[challengeId]);
+  const expiration=challenge?.expiresAt?Date.parse(challenge.expiresAt):NaN;
+  const remaining=Number.isFinite(expiration)?Math.max(0,Math.ceil((expiration-now)/1000)):null;
+  const expired=remaining===0;
+  const resendTime=challenge?.resendAvailableAt?Date.parse(challenge.resendAvailableAt):NaN;
+  const resendWait=Number.isFinite(resendTime)?Math.max(0,Math.ceil((resendTime-now)/1000)):0;
+  const resendExhausted=challenge?.resendsRemaining===0;
+
+  function enterDigits(value,index) {
+    const normalized=normalizeCode(value);
+    setError('');setNotice('');
+    if(!normalized){setDigits(previous=>previous.map((digit,i)=>i===index?'':digit));return;}
+    const start=normalized.length===6?0:index;
+    setDigits(previous=>{const next=[...previous];for(let i=0;i<normalized.length&&start+i<6;i++)next[start+i]=normalized[i];return next;});
+    digitRefs.current[Math.min(start+normalized.length,5)]?.focus();
+  }
+  function back() {
+    if(busy)return;
+    setChallengeId(null);setChallenge(null);setDigits(Array(6).fill(''));setError('');setFieldErrors({});setNotice('');
+  }
+  async function resend() {
+    if(busy||resendWait>0||resendExhausted)return;
+    setResending(true);setBusy(true);setError('');setNotice('');
+    try{
+      const result=await resendLoginCode(challengeId);
+      setChallenge(previous=>({...previous,...Object.fromEntries(Object.entries(result).filter(([,value])=>value!==undefined)),resendsRemaining:result.resendsRemaining??(Number.isInteger(previous?.resendsRemaining)?Math.max(0,previous.resendsRemaining-1):null),expiresAt:result.expiresAt??null,resendAvailableAt:result.resendAvailableAt??new Date(Date.now()+60000).toISOString()}));
+      setChallengeId(result.challengeId);setNow(Date.now());setDigits(Array(6).fill(''));setNotice('تم إعادة إرسال رمز التحقق.');
+    }catch(err){setError(err.message||'تعذر إعادة إرسال رمز التحقق.');}
+    finally{setBusy(false);setResending(false);requestAnimationFrame(()=>digitRefs.current[0]?.focus());}
+  }
+  async function submit(event) {
+    event.preventDefault();
+    if(busy)return;
+    setNotice('');setError('');
+    if(!otp){
+      const invalid={};
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()))invalid.email='البريد المدخل غير صحيح';
+      if(!password)invalid.password='أدخل الرقم السري';
+      setFieldErrors(invalid);
+      if(Object.keys(invalid).length)return;
+    }else{
+      if(expired){setError('انتهت صلاحية رمز التحقق. اطلب رمزًا جديدًا.');return;}
+      if(digits.some(digit=>!digit)){setError('أدخل رمز التحقق كاملًا.');digitRefs.current[digits.findIndex(digit=>!digit)]?.focus();return;}
+    }
+    setBusy(true);
+    try{
+      if(!otp){
+        const result=await requestLogin(email.trim(),password);
+        setChallenge(result);setNow(Date.now());setChallengeId(result.challengeId);setPassword('');setVisible(false);setDigits(Array(6).fill(''));
+      }else{
+        const session=await verifyLogin(challengeId,digits.join(''));
+        setAuthSession(session);setDigits(Array(6).fill(''));onLogin(session);
+      }
+    }catch(err){setError(err.message||'تعذر تسجيل الدخول. حاول مرة أخرى.');}
+    finally{setBusy(false);}
+  }
+
+  return <div className={'login-page '+(otp?'login-otp-page':'')}>
+    <LoginHero/>
+    <main className={'login-main '+(error?'has-error':'')}>
+      {otp&&<button type="button" className="login-back" aria-label="الرجوع لتسجيل الدخول" onClick={back} disabled={busy}><span><ChevronRight size={20}/></span>رجوع</button>}
+      <LoginArt name={otp?'logoVerify':'logo'} className="login-logo" label="MY PART — ماي بارت"/>
+      <section className={'login-content '+(otp?'login-verify-content':'')} aria-labelledby="login-title">
+        {otp&&<LoginArt name="badge" className="login-symbol"/>}
+        <h2 id="login-title">{otp?'رمز التحقق':'سجل الآن..'}</h2>
+        <p className="login-intro">{otp?<>قم بإدخال الرمز المرسل إلى <span className="otp-contact" dir="ltr">{challenge?.maskedEmail||email.trim()}</span></>:'أدخل بريدك الإلكتروني وكلمة السر ليصلك رمز التحقق'}</p>
+        <form onSubmit={submit} noValidate aria-busy={busy}>
+          {!otp?<>
+            <label className={'login-field '+(fieldErrors.email?'invalid':'')}>
+              <span>البريد الإلكتروني</span>
+              <span className="login-control"><LoginArt name="mail" className="login-field-icon"/><input type="email" name="email" autoComplete="username" aria-label="البريد الإلكتروني" placeholder="Sara ayman123@gmail" value={email} onChange={event=>{setEmail(event.target.value);setFieldErrors(previous=>({...previous,email:''}));setError('');}} required dir="ltr" disabled={busy} aria-invalid={Boolean(fieldErrors.email)} aria-describedby={fieldErrors.email?'email-error':undefined}/></span>
+              {fieldErrors.email&&<span id="email-error" className="login-field-error" role="alert">{fieldErrors.email}</span>}
+            </label>
+            <label className={'login-field '+(fieldErrors.password?'invalid':'')}>
+              <span>الرقم السري</span>
+              <span className="login-control"><LoginArt name="lock" className="login-field-icon"/><input type={visible?'text':'password'} name="password" autoComplete="current-password" aria-label="الرقم السري" placeholder="125384863" value={password} onChange={event=>{setPassword(event.target.value);setFieldErrors(previous=>({...previous,password:''}));setError('');}} required disabled={busy} aria-invalid={Boolean(fieldErrors.password)} aria-describedby={fieldErrors.password?'password-error':undefined}/><button type="button" aria-label={visible?'إخفاء كلمة المرور':'إظهار كلمة المرور'} disabled={busy} onClick={()=>setVisible(!visible)}>{visible?<EyeOff size={20}/>:<LoginArt name="eye"/>}</button></span>
+              {fieldErrors.password&&<span id="password-error" className="login-field-error" role="alert">{fieldErrors.password}</span>}
+            </label>
+            <p className="login-channel-note">سيتم إرسال رمز التحقق الخاص بك عبر <span>البريد الإلكتروني</span></p>
+            {error&&<p className="login-error" role="alert">{error}</p>}
+          </>:<div className={'otp-digits '+(error?'otp-invalid':'')} role="group" aria-label="رمز التحقق" dir="ltr" onPaste={event=>{const pasted=normalizeCode(event.clipboardData.getData('text'));if(pasted){event.preventDefault();enterDigits(pasted,0);}}}>
+            {digits.map((digit,index)=><input key={index} ref={element=>{digitRefs.current[index]=element;}} name={'otp-'+index} type="text" inputMode="numeric" autoComplete={index===0?'one-time-code':'off'} aria-label={'الرقم '+(index+1)+' من رمز التحقق'} value={digit} maxLength={6} disabled={busy} onChange={event=>enterDigits(event.target.value,index)} onFocus={event=>event.target.select()} onKeyDown={event=>{if(event.key==='Backspace'&&!digit&&index>0){event.preventDefault();setDigits(previous=>previous.map((value,i)=>i===index-1?'':value));digitRefs.current[index-1]?.focus();}if(event.key==='ArrowLeft'&&index>0){event.preventDefault();digitRefs.current[index-1]?.focus();}if(event.key==='ArrowRight'&&index<5){event.preventDefault();digitRefs.current[index+1]?.focus();}}}/>)}
+          </div>}
+          <button className="login-submit" type="submit" disabled={busy||(otp&&expired)}>{busy?<><LoaderCircle className="auth-spinner" size={19}/>{resending?'جارٍ إعادة الإرسال...':otp?'جارٍ التحقق...':'جارٍ تسجيل الدخول...'}</>:<>{otp?'متابعة':'تسجيل دخول'}<ArrowLeft size={20}/></>}</button>
+          {otp&&<div className="otp-status" aria-live="polite">
+            {error||expired||resendWait===0?<p className="otp-resend">لم يصلك الرمز؟ <button type="button" onClick={resend} disabled={busy||resendWait>0||resendExhausted}>{resendExhausted?'نفدت محاولات إعادة الإرسال':resending?'جارٍ الإرسال...':'إعادة إرسال'}</button>{resendWait>0&&<b>({resendWait} ثانية)</b>}</p>:remaining!==null&&<p className="otp-expiry">متبقي للرمز <b>{remaining} ثانية</b></p>}
+            {notice&&<p className="otp-notice" role="status">{notice}</p>}
+          </div>}
+        </form>
+      </section>
+      {otp&&error&&<p className="login-error-toast" role="alert"><TriangleAlert size={18} fill="white"/>{error}</p>}
+      <footer className="login-footer"><div className="login-legal"><span>شروط الاستخدام</span><i>·</i><span>سياسة الخصوصية</span></div><p>جميع الحقوق محفوظة ©2026 | لقطع غيارك</p></footer>
+    </main>
+  </div>;
+}

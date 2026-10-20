@@ -52,3 +52,32 @@ test('local session is cleared even if server logout is offline', async () => {
   try { await auth.logout(); assert.equal(auth.getAuthSession(), null); assert.equal(values.has(auth.AUTH_STORAGE_KEY), false); }
   finally { globalThis.fetch = original; }
 });
+
+test('login and resend use the documented email challenge endpoints without cookies', async () => {
+  const original = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, options) => {
+    calls.push({url, method: options.method, credentials: options.credentials, body: JSON.parse(options.body)});
+    return new Response(JSON.stringify({success: true, data: {otpRequired: true, challengeId: 'test-challenge', maskedEmail: 'a***@example.test', expiresAt: '2026-10-20T12:00:00Z', resendsRemaining: 2}}), {headers: {'Content-Type': 'application/json'}});
+  };
+  try {
+    const auth = await load();
+    const challenge = await auth.requestLogin('admin@example.test', 'test-password');
+    assert.equal(challenge.maskedEmail, 'a***@example.test');
+    await auth.resendLoginCode(challenge.challengeId);
+    assert.deepEqual(calls, [
+      {url: auth.API_BASE_URL + '/api/admin/login', method: 'POST', credentials: 'omit', body: {email: 'admin@example.test', password: 'test-password'}},
+      {url: auth.API_BASE_URL + '/api/admin/login/resend', method: 'POST', credentials: 'omit', body: {challengeId: 'test-challenge'}},
+    ]);
+  } finally { globalThis.fetch = original; }
+});
+
+test('a successful verify response without an access token cannot create a session', async () => {
+  const original = globalThis.fetch;
+  globalThis.fetch = async () => new Response(JSON.stringify({success: true, data: {authenticated: true}}), {headers: {'Content-Type': 'application/json'}});
+  try {
+    const auth = await load();
+    await assert.rejects(auth.verifyLogin('test-challenge', '123456'), /جلسة دخول صالحة/);
+    assert.equal(auth.getAuthSession(), null);
+  } finally { globalThis.fetch = original; }
+});
