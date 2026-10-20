@@ -21,7 +21,9 @@ async function send(path, {method = 'GET', body, signal, token} = {}) {
       const message = response.status === 401 ? 'انتهت جلسة الدخول. سجّل الدخول من جديد.'
         : response.status === 403 ? 'ليس لديك صلاحية لعرض هذه البيانات أو تنفيذ الإجراء.'
         : (typeof payload.message === 'string' ? payload.message : 'تعذر تحميل البيانات. حاول مرة أخرى.');
-      throw new ApiError(message, response.status);
+      const error = new ApiError(message, response.status);
+      error.validationErrors = Array.isArray(payload.errors) ? payload.errors.filter(x => x && typeof x.message === 'string').slice(0, 10) : [];
+      throw error;
     }
     return payload;
   } catch (error) {
