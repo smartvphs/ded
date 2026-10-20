@@ -21,7 +21,7 @@ export function announcementBody({title, phone, description, url}) {
 export async function uploadContentImage(dataUrl, type) {
   if (!dataUrl?.startsWith('data:image/')) throw new ApiError('اختر صورة أولًا.', 0);
   const blob = await (await fetch(dataUrl)).blob();
-  if (!['image/png', 'image/jpeg', 'image/webp'].includes(blob.type) || blob.size > 3 * 1024 * 1024) throw new ApiError('اختر صورة JPG أو PNG أو WebP أصغر من 3 ميجابايت.', 0);
+  if (!['image/png', 'image/jpeg', 'image/webp'].includes(blob.type) || blob.size > 5 * 1024 * 1024) throw new ApiError('اختر صورة JPG أو PNG أو WebP أصغر من 5 ميجابايت.', 0);
   const {data} = await adminRequest(`/api/uploads/signature?type=${encodeURIComponent(type)}&strictFormats=true`);
   if (!data?.signature || !data.apiKey || !data.cloudName) throw new ApiError('تعذر الحصول على توقيع رفع الصورة.', 0);
   const expected = `https://api.cloudinary.com/v1_1/${encodeURIComponent(data.cloudName)}/image/upload`;
