@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import ProductEditor from "./ProductEditor";
 import ProductPicture from "./ProductPicture";
+import ProductPreview from "./ProductPreview";
 import ServiceProducts from "./ServiceProducts";
 import { exportProductPdf } from "./product-export";
 import { sections, filters } from "./products-data";
@@ -752,21 +753,9 @@ export default function ProductsPage({ onSessionExpired }) {
         </Suspense>
       )}
       {editor?.mode === "preview" && (
-        <Modal title="معاينة المنتج" onClose={() => setEditor(null)}>
+        <Modal title="معاينة المنتج" className="pv-modal" onClose={() => setEditor(null)}>
           <ResourceState resource={detail} onLogin={onSessionExpired} />
-          {detail.data && (
-            <>
-              <h3>{detail.data.data.name}</h3>
-              <ProductPicture src={typeof detail.data.data.images?.[0] === "string" ? detail.data.data.images[0] : detail.data.data.images?.[0]?.image_url} alt="" style={{maxWidth:"100%",maxHeight:260,objectFit:"contain"}} />
-              <p>{detail.data.data.description || ""}</p>
-              <p>{detail.data.data.part_number || ""}</p>
-              <Money>
-                {number(
-                  detail.data.data.discount_price ?? detail.data.data.price,
-                )}
-              </Money>
-            </>
-          )}
+          {detail.data?.data && <ProductPreview key={detail.data.data.id} product={detail.data.data} />}
         </Modal>
       )}
       {deleting && (
