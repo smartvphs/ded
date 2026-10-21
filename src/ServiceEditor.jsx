@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { ProductReviews } from "./ProductExtras";
 import ProductPicture from "./ProductPicture";
+import {activeVehicleOptions} from "./product-catalog";
 import { Panel, Input, Tags, Toggle, Field, Money } from "./products-ui";
 import { adminRequest } from "./admin-api";
 import useAdminResource from "./use-admin-resource";
@@ -86,7 +87,7 @@ function ServiceCar({ car, makes, onChange, onRemove, removable }) {
           "السيارة",
           car.modelId,
           withCurrent(
-            Array.isArray(models.data?.data) ? models.data.data : [],
+            activeVehicleOptions(models.data?.data, car.modelId),
             car.modelId,
             car.modelNameAr || car.modelNameEn,
           ),
@@ -95,7 +96,7 @@ function ServiceCar({ car, makes, onChange, onRemove, removable }) {
         {select(
           "الشركة",
           car.makeId,
-          withCurrent(makes, car.makeId, car.makeNameAr || car.makeNameEn),
+          withCurrent(activeVehicleOptions(makes, car.makeId), car.makeId, car.makeNameAr || car.makeNameEn),
           (makeId) =>
             onChange({
               ...car,

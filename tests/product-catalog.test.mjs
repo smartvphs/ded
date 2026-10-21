@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';import {readFile} from 'node:fs/promises';
 const source=await readFile(new URL('../src/product-catalog.js',import.meta.url),'utf8');
-const {categoryFilters,inventorySummary,mergeProductDetails,compatibilityMakes,mainProductCategories}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const {categoryFilters,inventorySummary,mergeProductDetails,compatibilityMakes,mainProductCategories,activeVehicleOptions}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
 const categories=[{id:'parts',name_ar:'قطع غيار السيارات',sort_order:1,parent_id:null,type:'product'},{id:'ac',name_ar:'تكييف',parent_id:'parts',type:'product',products_count:4},{id:'electric',name_ar:'كهرباء',parent_id:'parts',type:'product'}, {id:'brakes',name_ar:'فرامل',parent_id:null,type:'product',sort_order:0},{id:'accessory',name_ar:'إكسسوارات',sort_order:6,parent_id:null,type:'product'},{id:'inside',name_ar:'إكسسوارات داخلية',parent_id:'accessory',type:'product',products_count:2},{id:'service',name_ar:'خدمات',sort_order:5,parent_id:null,type:'service'},{id:'service-child',name_ar:'صيانة دورية',parent_id:'service',type:'service',products_count:2}];
 const inventory=[{id:'one',category_id:'parts',subcategory_id:'ac',stock_quantity:0,status:'published'},{id:'two',category_id:'brakes',stock_quantity:3,status:'published'},{id:'three',category_id:'brakes',stock_quantity:10,status:'unpublished'}];
 test('parts categories exclude unrelated accessories/services and use counts from the selected product type',()=>{
@@ -36,4 +36,11 @@ test('new products use official main sections, while editing preserves a saved l
  assert.ok(!rows.some(row=>row.type==='service'||row.parent_id));
  assert.ok(rows.some(row=>row.id==='parts'));
  assert.ok(mainProductCategories(categories,'brakes').some(row=>row.id==='brakes'));
+});
+
+test('inactive vehicle choices are excluded for new compatibility without losing a saved selection',()=>{
+ const rows=[{id:'bmw',is_active:true},{id:'bm',is_active:false},{id:'legacy'},{id:'camel',isActive:false}];
+ assert.deepEqual(activeVehicleOptions(rows).map(x=>x.id),['bmw','legacy']);
+ assert.deepEqual(activeVehicleOptions(rows,'bm').map(x=>x.id),['bmw','bm','legacy']);
+ assert.deepEqual(activeVehicleOptions(undefined),[]);
 });

@@ -68,3 +68,7 @@ export function mainProductCategories(categories, selectedId) {
   const current = categories.find(row => row.id === selectedId);
   return current && !rows.some(row => row.id === current.id) ? [...rows,current] : rows;
 }
+
+export function activeVehicleOptions(rows, selectedId) {
+  return (Array.isArray(rows) ? rows : []).filter(row => (row.is_active ?? row.isActive) !== false || row.id === selectedId);
+}

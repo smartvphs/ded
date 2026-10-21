@@ -36,7 +36,7 @@ import {
   productBody,
   compatibilityBody,
 } from "./product-editor-model";
-import { readSpecification, writeSpecification, mainProductCategories } from "./product-catalog";
+import { readSpecification, writeSpecification, mainProductCategories, activeVehicleOptions } from "./product-catalog";
 import { catalogOptions } from "./catalog-options";
 import {
   RelatedProducts,
@@ -97,13 +97,13 @@ function CompatibilityRow({ row, onChange, onRemove, makes, fields }) {
         <Choice
           label="الشركة"
           value={row.makeId || ""}
-          rows={makes}
+          rows={activeVehicleOptions(makes, row.makeId)}
           onChange={(v) => onChange({ ...row, makeId: v, modelId: "" })}
         />
         <Choice
           label="السيارة"
           value={row.modelId || ""}
-          rows={Array.isArray(models.data?.data) ? models.data.data : []}
+          rows={activeVehicleOptions(models.data?.data, row.modelId)}
           onChange={(v) => set("modelId", v)}
         />
         {[
