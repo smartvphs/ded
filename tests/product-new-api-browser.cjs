@@ -514,8 +514,10 @@ const XLSX = require("xlsx");
     await p.getByRole("button", { name: "حفظ", exact: true }).click();
     await p
       .getByRole("status")
-      .filter({ hasText: "تم حفظ المنتج على الخادم" })
+      .filter({ hasText: "تم نشر المنتج على المنصة" })
       .waitFor();
+    await p.getByRole("button", {name:"إجراءات منتج أساسي",exact:true}).click();
+    await p.getByRole("button", {name:"تعديل البيانات",exact:true}).click();
     assert.equal(p1.cost_price, 65);
     assert.equal(p1.is_free_shipping, true);
     assert.equal(p1.is_special_offer, true);
@@ -645,12 +647,9 @@ const XLSX = require("xlsx");
     await p.getByRole("button", { name: "حفظ", exact: true }).click();
     await p
       .getByRole("status")
-      .filter({ hasText: "تم حفظ المنتج على الخادم" })
+      .filter({ hasText: "تم نشر المنتج على المنصة" })
       .waitFor();
     assert.ok(products.some((x) => x.id === "created-platform"));
-    await p
-      .getByRole("button", { name: "العودة للمنتجات", exact: true })
-      .click();
     const popupPromise = p.waitForEvent("popup");
     await p.getByRole("button", { name: "تصدير PDF" }).click();
     const popup = await popupPromise;

@@ -14,6 +14,7 @@ import {
   Shuffle,
   Star,
   ChevronDown,
+  X,
 } from "lucide-react";
 import ProductEditor from "./ProductEditor";
 import ProductPicture from "./ProductPicture";
@@ -52,10 +53,16 @@ export default function ProductsPage({ onSessionExpired }) {
     [editor, setEditor] = useState(null),
     [revision, setRevision] = useState(0),
     [notice, setNotice] = useState(""),
+    [productSuccess, setProductSuccess] = useState(""),
     [deleting, setDeleting] = useState(null),
     [busy, setBusy] = useState(false),
     [debounced, setDebounced] = useState(""),
     [importing, setImporting] = useState(false);
+  useEffect(() => {
+    if (!productSuccess) return;
+    const timer = setTimeout(() => setProductSuccess(""), 7000);
+    return () => clearTimeout(timer);
+  }, [productSuccess]);
   const root = useRef(null),
     deleteLock = useRef(false);
   useEffect(() => {
@@ -200,6 +207,7 @@ export default function ProductsPage({ onSessionExpired }) {
     setMenu(null);
   }, [group, page, debounced, status, filter]);
   function open(row, mode = "preview") {
+    setProductSuccess("");
     setMenu(null);
     setEditor({ row, mode, group });
     setNotice("");
@@ -270,6 +278,11 @@ export default function ProductsPage({ onSessionExpired }) {
         product={editor.row}
         mode={editor.mode}
         onSaved={() => setRevision((n) => n + 1)}
+        onComplete={({published}) => {
+          setEditor(null);setPage(1);setFilter("");setSearch("");setDebounced("");setStatus("");setChecked([]);setMenu(null);setNotice("");
+          setProductSuccess(published ? "تم نشر المنتج على المنصة." : "تم حفظ المنتج بدون نشر.");
+          window.scrollTo({top:0,behavior:"instant"});
+        }}
         onBack={() => {
           setEditor(null);
           setRevision((n) => n + 1);
@@ -328,6 +341,7 @@ export default function ProductsPage({ onSessionExpired }) {
             ];
   return (
     <div className="pp-page" ref={root}>
+      {productSuccess && <div className="pp-save-toast" role="status"><span className="pp-save-toast-icon"><CheckCircle2 size={24}/></span><span>{productSuccess}</span><button type="button" aria-label="إغلاق رسالة الحفظ" onClick={() => setProductSuccess("")}><X size={17}/></button></div>}
       <div className="pp-page-heading">
         <h1>{isService ? "خدمات ماي بارت" : "إدارة المنتجات"}</h1>
         <div className="pp-import-export">

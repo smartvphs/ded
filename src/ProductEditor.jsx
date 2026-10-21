@@ -130,6 +130,7 @@ export default function ProductEditor({
   product,
   mode,
   onSaved,
+  onComplete,
   onBack,
 }) {
   const [id, setId] = useState(mode === "add" ? null : product.id),
@@ -325,8 +326,10 @@ export default function ProductEditor({
       const verified = productDraft(confirmed.data);
       setDraft(verified);
       setBaseline(verified);
-      setNotice("تم حفظ المنتج على الخادم.");
+      const published = verified.isActive && !["unpublished", "deleted"].includes(confirmed.data.status);
+      setNotice(published ? "تم نشر المنتج على المنصة." : "تم حفظ المنتج بدون نشر.");
       onSaved?.();
+      onComplete?.({published});
     } catch (e) {
       if (stage === "create" && (!e.status || e.status >= 500))
         uncertainCreate.current = true;
