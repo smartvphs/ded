@@ -8,10 +8,10 @@ export function orderListParams({filters = {}, search = '', page = 1, tab = 'all
     ...(!returns ? {timezone: 'Asia/Riyadh', supplierId: filters.supplier || undefined, makeId: filters.makeId || undefined,
       paymentMethod: filters.payment || undefined, source: filters.source || undefined} : {})};
 }
-export async function supplierOptions(signal) {
+export async function supplierOptions(signal, {approvalStatus} = {}) {
   const rows = []; const seen = new Set(); let offset = 0;
   while (true) {
-    const payload = await adminRequest('/api/suppliers/admin?' + queryString({limit: 100, offset}), {signal});
+    const payload = await adminRequest('/api/suppliers/admin?' + queryString({limit: 100, offset, ...(approvalStatus ? {approvalStatus} : {})}), {signal});
     const items = payload.data?.items;
     if (!Array.isArray(items)) throw new ApiError('تعذر قراءة قائمة الموردين من الخادم.', 0);
     for (const row of items) if (!seen.has(row.id)) {seen.add(row.id); rows.push(row);}

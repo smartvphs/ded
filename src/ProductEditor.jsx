@@ -29,6 +29,7 @@ import {
 import { adminRequest } from "./admin-api";
 import ProductGallery from "./ProductGallery";
 import useAdminResource from "./use-admin-resource";
+import useOrderSuppliers from "./use-order-suppliers";
 import { uploadContentImage } from "./definitions-api";
 import {
   productDraft,
@@ -44,7 +45,7 @@ import {
   LatestPricings,
   GenerateDescription,
 } from "./ProductExtras";
-function Choice({ label, rows = [], value, onChange, disabled = false }) {
+function Choice({ label, rows = [], value, onChange, disabled = false, emptyLabel = "-- اختر --" }) {
   return (
     <Field label={label} icon={Grid2X2}>
       <select
@@ -53,7 +54,7 @@ function Choice({ label, rows = [], value, onChange, disabled = false }) {
         disabled={disabled}
         onChange={(e) => onChange(e.target.value)}
       >
-        <option value="">-- اختر --</option>
+        <option value="">{emptyLabel}</option>
         {rows.map((x) => (
           <option key={x.id} value={x.id}>
             {x.name_ar ?? x.name ?? x.name_en ?? x.label ?? x.id}
@@ -140,9 +141,7 @@ export default function ProductEditor({
     [tab, setTab] = useState("details"),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState(""),
-    [error, setError] = useState(""),
-    [supplierSearch, setSupplierSearch] = useState(""),
-    [supplierQuery, setSupplierQuery] = useState("");
+    [error, setError] = useState("");
   const [selectedImage, setSelectedImage] = useState("");
   const lock = useRef(false),
     uncertainCreate = useRef(false),
@@ -168,19 +167,10 @@ export default function ProductEditor({
         }[group] +
         "&active=true",
     );
-  const suppliers = useAdminResource(
-    !id && supplierQuery
-      ? "/api/suppliers/admin?approvalStatus=approved&limit=20&offset=0&search=" +
-          encodeURIComponent(supplierQuery)
-      : null,
-  );
+  const suppliers = useOrderSuppliers(!id, "approved");
   const makes = useAdminResource(
     group === "parts" ? "/api/cars/admin/makes" : null,
   );
-  useEffect(() => {
-    const t = setTimeout(() => setSupplierQuery(supplierSearch), 300);
-    return () => clearTimeout(t);
-  }, [supplierSearch]);
   useEffect(() => {
     if (!detail.data) return;
     const row = detail.data.data;
@@ -535,14 +525,10 @@ export default function ProductEditor({
                     />
                     {!id && (
                       <>
-                        <Input
-                          label="البحث عن مورد"
-                          aria-label="البحث عن مورد"
-                          value={supplierSearch}
-                          onChange={(e) => setSupplierSearch(e.target.value)}
-                        />
                         <Choice
                           label="المورد (اختياري؛ الافتراضي ماي بارت)"
+                          emptyLabel="ماي بارت (الافتراضي)"
+                          disabled={suppliers.loading || Boolean(suppliers.error)}
                           rows={selectableSuppliers}
                           value={draft.supplierId}
                           onChange={(v) =>
