@@ -699,6 +699,10 @@ const XLSX = require("xlsx");
     await p
       .getByLabel("الإسم الأساسي", { exact: true })
       .fill("فحص بعد التعديل");
+    await p.evaluate(() => Object.defineProperty(navigator, "clipboard", {configurable:true,value:{writeText: async (value) => {window.__copiedService = value;}}}));
+    await p.getByRole("button",{name:"نسخ رابط الخدمة",exact:true}).click();
+    await p.getByRole("status").filter({hasText:"تم نسخ رابط الخدمة"}).waitFor();
+    assert.equal(await p.evaluate(() => window.__copiedService), "https://mypart.com.sa/#/service/svc");
     assert.equal(await p.getByLabel("خط العرض", { exact: true }).count(), 0);
     assert.equal(
       await p.getByLabel("مدة الخدمة بالدقائق", { exact: true }).count(),

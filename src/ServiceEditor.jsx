@@ -560,10 +560,12 @@ export default function ServiceEditor({ id, onBack, onSaved }) {
                 extra={
                   <button
                     className="pp-copy-link"
-                    disabled={!draft.url}
-                    onClick={() => {
-                      if (draft.url) navigator.clipboard?.writeText(draft.url);
-                    }}
+                    disabled={!serviceId || mutation.busy}
+                    onClick={() => mutation.run(async () => {
+                      if (!navigator.clipboard?.writeText) throw new Error("المتصفح لا يدعم نسخ الرابط.");
+                      await navigator.clipboard.writeText("https://mypart.com.sa/#/service/" + encodeURIComponent(serviceId));
+                      mutation.setNotice("تم نسخ رابط الخدمة.");
+                    })}
                   >
                     <ExternalLink size={17} />
                     نسخ رابط الخدمة
