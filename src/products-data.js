@@ -1,5 +1,5 @@
 export const assets={
- toyota:['03',1058,1398,56,56],shippingBox:['03',821,3211,67,55],shippingTruck:['03',480,3211,83,55],partsCategory:['01',932,411,73,75],oilCategory:['01',713,411,86,75],tiresCategory:['01',494,411,79,75],servicesCategory:['01',274,411,74,75],servicesBrown:['06',274,411,74,75],accessoriesCategory:['01',64,411,55,75],
+ toyota:['03',1058,1398,56,56],shippingBox:['03',821,3211,67,55],shippingTruck:['03',480,3211,83,55],partsCategory:['01',932,411,73,75],oilCategory:['01',713,411,86,75],tiresCategory:['01',494,411,79,75],servicesCategory:['01',274,411,74,75],servicesBrown:['06',274,411,74,75],accessoriesCategory:['01',64,411,46,75],
  wheel:['05',82,333,317,240],oil:['07',82,333,317,240],tire:['09',82,333,317,240],service:['11',82,333,317,240],steering:['13',82,333,317,240],
  wheelSmall:['01',1014,741,39,39],bmw:['01',853,743,36,36],fiat:['01',806,743,36,36],lamborghini:['01',760,743,36,36],mercedes:['10',823,680,43,43],
  oilBlue:['06',1011,740,39,40],oilBlack:['06',1011,821,39,40],oilYellow:['06',1011,901,39,40],tireSmall:['08',1013,741,39,39],tireGray:['08',1013,821,39,39],tireBlue:['08',1013,901,39,39],
