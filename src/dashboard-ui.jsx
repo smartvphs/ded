@@ -1,6 +1,7 @@
+import RiyalIcon from './RiyalIcon';
 import React from 'react';
 import {number} from './dashboard-data';
-export function Money({value}) { return <span className="currency-amount"><img className="riyal-icon" src="/images/brand/riyal.png" alt="ريال سعودي"/>{number(value)}</span>; }
+export function Money({value}) { return <span className="currency-amount"><RiyalIcon />{number(value)}</span>; }
 export function Empty({children = 'لا توجد بيانات خلال الفترة المحددة.'}) { return <p className="dashboard-empty">{children}</p>; }
 export function ResourceState({resource, onLogin}) {
   if (resource.loading) return <p className="dashboard-state" role="status">جارٍ تحميل البيانات…</p>;

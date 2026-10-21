@@ -1,3 +1,4 @@
+import RiyalIcon from './RiyalIcon';
 import React, {useState} from 'react';
 import {Eye, Trash2, Check, ArrowDownUp} from 'lucide-react';
 
@@ -11,7 +12,7 @@ const quantities = [2,4,5,10,2];
 const dates = ['02','03','08','10','15'];
 function Status({kind, children}) {return <span className={'order-status '+kind}><i/>{children}</span>}
 function Company(){return <span className="company"><span className="bmw">BMW</span>بي ام دبليو 2025</span>}
-function Price(){return <span className="order-price currency-amount" dir="ltr"><img className="riyal-icon" src="/images/brand/riyal.png" alt="ريال سعودي"/>300.323</span>}
+function Price(){return <span className="order-price currency-amount" dir="ltr"><RiyalIcon />300.323</span>}
 function Supplier({index}) {let nile=index%2===0;return <span className="order-supplier"><span className={'mini-logo '+(nile?'violet':'teal')}>{nile?'N':'kh'}</span>{nile?'شركة النيل':'شركة الخليج'}</span>}
 export default function Orders({onView,category='parts'}) {
  const [view,setView]=useState('missing');

@@ -1,3 +1,4 @@
+import RiyalIcon from './RiyalIcon';
 import React, { useRef, useState } from 'react';
 import { History, Upload, Image as ImageIcon, Trash2, ChevronDown, X, Settings, MessageSquare, Search, MoreVertical, Eye, CircleCheck, Circle, ArchiveRestore, BrainCircuit, CircleDollarSign, Save, ChevronsUpDown } from 'lucide-react';
 import { settingsArtwork, settingsImageHeights } from './settings-assets';
@@ -8,7 +9,7 @@ function Art({ name, className = '', label }) {
   return <svg className={'st-art ' + className} viewBox={`${x} ${y} ${w} ${h}`} preserveAspectRatio="xMidYMid meet" role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : true}><image href={`/settings-reference/${file}.png`} x="0" y="0" width="1440" height={settingsImageHeights[file]} /></svg>;
 }
 function Field({ label, icon, value, placeholder = '', suffix, className = '', type = 'text', trailing }) {
-  return <label className={'st-field ' + className}><span>{label}</span><span className="st-control">{icon && <span className="st-field-icon"><Art name={icon} /></span>}<input aria-label={label} type={type} defaultValue={value} placeholder={placeholder} />{suffix && <span className="st-suffix">{suffix === 'riyal' ? <img src="/images/brand/riyal.png" alt="ريال" /> : suffix}</span>}{trailing}</span></label>;
+  return <label className={'st-field ' + className}><span>{label}</span><span className="st-control">{icon && <span className="st-field-icon"><Art name={icon} /></span>}<input aria-label={label} type={type} defaultValue={value} placeholder={placeholder} />{suffix && <span className="st-suffix">{suffix === 'riyal' ? <RiyalIcon /> : suffix}</span>}{trailing}</span></label>;
 }
 function Switch({ label, initial = true }) {
   const [on, setOn] = useState(initial);

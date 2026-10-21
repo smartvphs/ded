@@ -1,5 +1,6 @@
+import RiyalIcon from './RiyalIcon';
 import React,{useState} from 'react';import{X,BookOpen,Flame,Plus,Search,Edit3,Copy,Trash2,Ticket,Users,FileText,Coins,Bell,Eye,Send,Building2,ShoppingBag,Wallet,Clock,Check}from'lucide-react';import './admin-pages.css';
-function Money({value}){return <span className="currency-amount"><img className="riyal-icon" src="/images/brand/riyal.png" alt="ريال سعودي"/>{Number(value).toLocaleString('en-US',{maximumFractionDigits:2})}</span>}
+function Money({value}){return <span className="currency-amount"><RiyalIcon />{Number(value).toLocaleString('en-US',{maximumFractionDigits:2})}</span>}
 function SearchBox({value,onChange,placeholder}){return <label className="admin-search"><Search size={17}/><input aria-label={placeholder} placeholder={placeholder} value={value} onChange={e=>onChange(e.target.value)}/></label>}
 function Pagination({page,setPage,pages}){return <div className="pricing-pagination"><button disabled={page===1} onClick={()=>setPage(page-1)}>السابق</button>{Array.from({length:pages},(_,i)=><button key={i} className={page===i+1?'selected':''} onClick={()=>setPage(i+1)}>{i+1}</button>)}<button disabled={page===pages} onClick={()=>setPage(page+1)}>التالي</button></div>}
 function Toast({message}){return message&&<div className="definition-toast" role="status"><Check size={17}/>{message}</div>}
