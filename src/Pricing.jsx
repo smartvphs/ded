@@ -1,26 +1,492 @@
-import React,{useState,useEffect} from 'react';
-import {Coins,CheckCircle2,Clock,TriangleAlert,Search,Download,Eye,MoreVertical,ChevronDown,ChevronUp,ArrowRight,Plus,X,Trash2,Car,FileText,ListOrdered,CalendarDays,Package,Tags,Edit3,Flame} from 'lucide-react';
-import './pricing.css';
-const statuses={priced:['تم التسعير','green'],missing:['تحتاج إضافة','orange'],pricing:['في التسعير','purple']};
-const baseRows=[['فاطمة فاطمة','فيات تيبو 2024','free','priced',2],['محمد أحمد','بي ام دبليو 2025','quick','missing',5],['علي سالم','إم جي ZS 2026','quick','pricing',10],['محمود خليل','بي ام دبليو 2025','free','priced',50],['سعيد محمد','فيات تيبو 2024','free','missing',80],['أيمن عبد الله','إم جي ZS 2026','quick','pricing',20],['طارق خليل','بي ام دبليو 2025','quick','priced',10],['طارق خليل','إم جي ZS 2026','free','priced',3]];
-const initialRows=Array.from({length:24},(_,i)=>{const [client,company,type,status,count]=baseRows[i%8];return{id:i+1,client,company,type,status,count,date:`2025-05-${String([2,3,8,10,15,20,25,30][i%8]).padStart(2,'0')}`,time:'09:00'}});
-const formatId=id=>'PRQ-'+String(id).padStart(3,'0');
-function Badge({type,children}){return <span className={'pricing-badge '+type}><i/>{children}</span>}
-function Money({value}){return <span className="currency-amount"><img className="riyal-icon" src="/images/brand/riyal.png" alt="ريال سعودي"/>{Number(value).toLocaleString('en-US')}</span>}
-function Field({label,children}){return <label className="pricing-field"><span>{label}</span>{children}</label>}
-const qualityOptions=['أصلي','بديل','تجاري','مستعمل'];
-function QuoteModal({initial,onClose,onSave}){const[offers,setOffers]=useState(initial?.length?initial.map(o=>({...o,id:Math.random()})):[{id:1,quality:'أصلي',price:'3500',note:'يستحمل حرارة أكثر'},{id:2,quality:'',price:'',note:''}]);const[error,setError]=useState('');const update=(id,key,value)=>setOffers(offers.map(o=>o.id===id?{...o,[key]:value}:o));return <div className="modal-backdrop" onClick={onClose}><div className="pricing-modal" role="dialog" aria-modal="true" aria-labelledby="quote-title" onClick={e=>e.stopPropagation()}><button className="pricing-modal-close" aria-label="إغلاق" onClick={onClose}><X size={20}/></button><h2 id="quote-title">إرسال طلب تسعير</h2><form onSubmit={e=>{e.preventDefault();const filled=offers.filter(o=>o.quality||o.price||o.note);if(!filled.length||filled.some(o=>!o.quality||!o.price||Number(o.price)<=0)){setError('حدد الجودة وسعرًا أكبر من صفر لكل عرض، أو احذف الصف الفارغ');return}onSave(filled)}}><div className="quote-offers">{offers.map((o,index)=><div className="quote-offer-row" key={o.id}><Field label="الجودة"><select aria-label={'الجودة '+(index+1)} value={o.quality} onChange={e=>update(o.id,'quality',e.target.value)}><option value="">اختر من بين الجودات</option>{qualityOptions.map(q=><option key={q}>{q}</option>)}</select></Field><Field label={index===0?'السعر':'السعر (قبل الضريبة)'}><input type="number" min="0.01" step="0.01" aria-label={'السعر '+(index+1)} placeholder="أضف سعر المنتج" value={o.price} onChange={e=>update(o.id,'price',e.target.value)}/></Field><Field label="ملاحظة على المنتج"><input aria-label={'ملاحظة '+(index+1)} placeholder="اكتب ملاحظاتك على المنتج" value={o.note} onChange={e=>update(o.id,'note',e.target.value)}/></Field><button type="button" className="pricing-delete" aria-label={'حذف الجودة '+(index+1)} onClick={()=>setOffers(offers.filter(x=>x.id!==o.id))}><Trash2 size={17}/></button></div>)}</div>{error&&<p className="form-error" role="alert">{error}</p>}<div className="quote-modal-buttons"><button type="button" className="pricing-primary" onClick={()=>setOffers([...offers,{id:Date.now(),quality:'',price:'',note:''}])}><Plus size={19}/>إضافة جودة أخرى</button><button type="submit" className="pricing-outline">إرسال</button></div></form></div></div>}
-function RequestDetails({request,onBack,onUpdate,draft,onDraft}){
- const[stage,setStage]=useState(draft?.stage??(request.status==='priced'?2:request.status==='pricing'?1:0)),[parts,setParts]=useState(draft?.parts??Array.from({length:3},(_,i)=>({id:i+1,name:'كمبروسور تكييف',missing:i===0&&request.status==='missing',open:request.status==='priced'?i===0:i===2,offers:request.status==='priced'&&i<2?[{supplier:'شركة النيل لقطع غيار السيارات',logo:'N',quality:'أصلي',price:'3680',note:'يستحمل حرارة أكثر ويشتمل على ضمان سنة'},{supplier:'شركة الخليج لقطع غيار السيارات',logo:'kh',quality:'أصلي',price:'3680',note:'يستحمل حرارة أكثر ويشتمل على ضمان سنة'},{quality:'أصلي',price:'3680',note:'يستحمل حرارة أكثر ويشتمل على ضمان سنة'}]:[]}))),[quotePart,setQuotePart]=useState(null),[addPart,setAddPart]=useState(null),[productName,setProductName]=useState(''),[toast,setToast]=useState('');
- useEffect(()=>{onDraft({stage,parts})},[stage,parts]);
- const notify=text=>{setToast(text);setTimeout(()=>setToast(''),3500)};
- const priced=parts.filter(p=>p.offers.length).length;const missing=parts.some(p=>p.missing);const changePart=(id,changes)=>setParts(parts.map(p=>p.id===id?{...p,...changes}:p));
- const forward=()=>{if(missing){notify('أضف القطعة الناقصة إلى قاعدة البيانات أولًا');return}setStage(1);setParts(parts.map(p=>({...p,open:true})));onUpdate('pricing');notify('تمت محاكاة تحويل الطلب للموردين في المعاينة')};
- return <div className="pricing-details"><div className="pricing-heading"><h1>تفاصيل الطلب</h1><button className="pricing-back" onClick={onBack}><ArrowRight size={17}/>طلبات التسعير</button></div><section className="pricing-customer-card"><div className="request-banner"><div><h2 dir="ltr">{formatId(request.id)}#</h2><span>{request.date.slice(8)} مايو 2025</span></div><div className="request-banner-actions">{stage<2&&!missing&&<button className="pricing-primary" onClick={forward}>إرسال التسعير للموردين</button>}{stage===2&&<span className="customer-seen">تمت مشاهدة التسعير من قبل العميل</span>}<Badge type={request.type==='quick'?'red':'blue'}>{request.type==='quick'?'تسعير سريع':'تسعير مجاني'}</Badge></div></div><div className="customer-content"><div className="request-client"><span className="pricing-client-avatar">م</span><div>العميل محمد أسامة مشهور<small dir="ltr">+96685445541</small></div></div><div className="request-meta">{[[ListOrdered,'رقم الهيكل','6565666126 6165'],[FileText,'الشركة المصنعة','هيونداي'],[Car,'موديل السيارة','النترا'],[CalendarDays,'سنة الصنع','2015'],[Package,'عدد القطع',request.count+' قطع'],[Tags,'الجودات المطلوبة',stage===0?'أصلية':'أصلي وبديل']].map(([I,label,value])=><div key={label}><span className="meta-icon"><I size={19}/></span><div><span>{label}</span><b>{value}</b></div></div>)}</div>{stage>0&&<div className="detail-urgency"><span><Flame size={15}/> المهلة تنتهي قريبًا — يجب إرسال التسعير قبل الانتهاء</span><div className="detail-time"><span>30:29</span><div><i/></div></div></div>}</div></section><section className="pricing-parts-card">{stage>0&&<div className="parts-summary"><div><h2>تسعير القطع</h2><p>كل قطعة لها أكثر من جودة مثل أصلي وبديل وتجاري، ويتم حفظ الأسعار لكل جودة.</p></div><div className="parts-progress">{stage===1&&<button className="pricing-primary" disabled={priced!==parts.length} onClick={()=>{setStage(2);onUpdate('priced');notify('تمت محاكاة إرسال التسعير في المعاينة')}}>إرسال التسعير للموردين المعنيين</button>}<div className="progress-track"><i style={{width:priced/parts.length*100+'%'}}/></div><span>{priced} / {parts.length} تم تسعيرها</span></div></div>}{parts.map(part=><article className={'request-part '+(part.missing?'missing-part':'')} key={part.id}><div className="part-heading"><button className="part-toggle" aria-expanded={part.open} onClick={()=>changePart(part.id,{open:!part.open})}><span className="part-thumb">⚙️</span><span><b>{part.name}</b><small>كل قطعة نقدم لها أكثر من جودة مثل أصلي وبديل وتجاري... </small>{part.open&&<span className="part-tags"><i>الكمية: 1</i><i>قطعة رقم 4</i><i>مرسيدس C200</i></span>}</span></button><div className="part-status">{part.offers.length>0&&<span className="admin-priced">تسعير بواسطة الأدمن</span>}<Badge type={part.missing?'red':part.offers.length?'green':'orange'}>{part.missing?'المنتج يحتاج إضافة لقاعدة البيانات':part.offers.length?'تم التسعير':'في انتظار تسعير الموردين'}</Badge>{part.missing&&<button className="pricing-primary" onClick={()=>{setAddPart(part.id);setProductName(part.name)}}>إضافة منتج</button>}<button className="collapse-button" aria-label={part.open?'طي القطعة '+part.id:'فتح القطعة '+part.id} onClick={()=>changePart(part.id,{open:!part.open})}>{part.open?<ChevronUp size={17}/>:<ChevronDown size={17}/>}</button></div></div>{part.open&&!part.missing&&<div className="part-offers">{part.offers.map((offer,index)=><div className="supplier-quote" key={index}><div className="quote-supplier-head"><div className="quote-supplier"><span className={'mini-logo '+(index%2===0?'violet':'teal')}>{offer.logo||'م'}</span><div><small>{offer.supplier?'اسم المورد':'تسعير بواسطة الأدمن'}</small><p>{offer.supplier||'محمد مشهور'}</p></div></div><button className="quote-edit" onClick={()=>setQuotePart(part.id)}><Edit3 size={13}/>تعديل الأسعار</button></div><div className="quote-values"><div><span>الجودة</span><b className="quote-quality">قطعة {offer.quality==='أصلي'?'أصلية':offer.quality}</b></div><div><span>السعر</span><b><Money value={offer.price}/></b></div><div><span>ملاحظة على المنتج</span><b>{offer.note||'—'}</b></div></div></div>)}{stage>0&&<button className="pricing-primary add-price" onClick={()=>setQuotePart(part.id)}>إضافة تسعير</button>}{stage===0&&<p className="part-waiting">سيظهر التسعير هنا بعد تحويل الطلب للموردين.</p>}</div>}</article>)}</section>{toast&&<div className="definition-toast" role="status">{toast}</div>}{quotePart&&<QuoteModal initial={parts.find(p=>p.id===quotePart).offers.filter(o=>!o.supplier)} onClose={()=>setQuotePart(null)} onSave={offers=>{changePart(quotePart,{offers:[...parts.find(p=>p.id===quotePart).offers.filter(o=>o.supplier),...offers],open:true});setQuotePart(null);notify('تم إضافة الأسعار إلى المعاينة')}}/>}{addPart&&<div className="modal-backdrop" onClick={()=>setAddPart(null)}><form className="pricing-modal product-add-modal" onClick={e=>e.stopPropagation()} onSubmit={e=>{e.preventDefault();changePart(addPart,{missing:false,name:productName});setAddPart(null);notify('تمت إضافة المنتج في المعاينة')}}><h2>إضافة المنتج إلى قاعدة البيانات</h2><Field label="اسم المنتج"><input value={productName} onChange={e=>setProductName(e.target.value)} required/></Field><button className="pricing-primary" type="submit">إضافة المنتج</button><button type="button" className="pricing-back" onClick={()=>setAddPart(null)}>إلغاء</button></form></div>}</div>
-}
-export default function Pricing(){const[drafts,setDrafts]=useState({});const[rows,setRows]=useState(initialRows),[detail,setDetail]=useState(null),[selected,setSelected]=useState([]),[page,setPage]=useState(1),[search,setSearch]=useState(''),[filters,setFilters]=useState({company:'',time:'',date:'',type:'',status:''}),[applied,setApplied]=useState({company:'',time:'',date:'',type:'',status:''}),[actionMenu,setActionMenu]=useState(null);const updateFilter=(key,value)=>setFilters({...filters,[key]:value});
- const filtered=rows.filter(r=>(!applied.company||r.company===applied.company)&&(!applied.type||r.type===applied.type)&&(!applied.status||r.status===applied.status)&&(!applied.date||r.date===applied.date)&&(!applied.time||r.time===applied.time)&&(!search||[formatId(r.id),r.client,r.company].some(v=>v.includes(search))));const pages=Math.max(1,Math.ceil(filtered.length/8)),safePage=Math.min(page,pages),visible=filtered.slice((safePage-1)*8,safePage*8);const toggle=id=>setSelected(selected.includes(id)?selected.filter(x=>x!==id):[...selected,id]);
- const exportFile=()=>{const list=selected.length?filtered.filter(r=>selected.includes(r.id)):filtered;const cells=[['رقم الطلب','العميل','الشركة','تاريخ الطلب','نوع التسعير','عدد القطع','الحالة'],...list.map(r=>[formatId(r.id),r.client,r.company,r.date,r.type==='quick'?'سريع':'مجاني',r.count,statuses[r.status][0]])];const csv='\uFEFF'+cells.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\r\n');const url=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='pricing-requests.csv';a.click();URL.revokeObjectURL(url)};
- if(detail)return <RequestDetails key={detail.id} request={detail} draft={drafts[detail.id]} onDraft={draft=>setDrafts(prev=>({...prev,[detail.id]:draft}))} onBack={()=>setDetail(null)} onUpdate={status=>setRows(rows.map(r=>r.id===detail.id?{...r,status}:r))}/>;
- return <div className="pricing-content"><div className="pricing-heading"><div><h1>طلبات التسعير</h1><span className="fast-label">تسعير سريع 20$</span></div><button className="pricing-export" onClick={exportFile}><Download size={16}/>رفع ملف Excel</button></div><section className="pricing-statistics">{[[58,'إجمالي طلبات التسعير','blue',Coins],[21,'تسعيرات مؤكدة','green',CheckCircle2],[24,'قيد التسعير','purple',Clock],[8,'تحتاج إضافة منتجات','yellow',TriangleAlert]].map(([value,label,color,I])=><div className={'pricing-stat '+color} key={label}><span className="stat-icon"><I size={18}/></span><b>{value}</b><span>{label}</span></div>)}</section><button className="pricing-warning" onClick={()=>{setFilters({...filters,status:'missing'});setApplied({...applied,status:'missing'});setPage(1)}}><TriangleAlert size={24}/><div><b>8 طلبات تحتوي على منتجات غير متواجدة في قاعدة البيانات</b><small>يجب إضافة هذه المنتجات قبل التسعير وإرسالها للموردين</small></div><ArrowRight size={22}/></button><section className="pricing-filter-card"><h2>البحث والتصفية</h2><form onSubmit={e=>{e.preventDefault();setApplied(filters);setPage(1)}}><div className="pricing-filter-grid"><Field label="السيارات"><select value={filters.company} onChange={e=>updateFilter('company',e.target.value)}><option value="">تويوتا، بي ام دبليو، مرسيدس</option>{[...new Set(rows.map(r=>r.company))].map(c=><option key={c}>{c}</option>)}</select></Field><Field label="أوقات التسعير"><select value={filters.time} onChange={e=>updateFilter('time',e.target.value)}><option value="">من 9:00 صباحًا – 5:00 مساءً</option><option value="09:00">09:00 صباحًا</option><option value="17:00">05:00 مساءً</option></select></Field><Field label="تاريخ الطلب"><input type="date" value={filters.date} onChange={e=>updateFilter('date',e.target.value)}/></Field><Field label="نوع التسعير"><select value={filters.type} onChange={e=>updateFilter('type',e.target.value)}><option value="">نوع التسعير</option><option value="quick">سريع</option><option value="free">مجاني</option></select></Field><Field label="حالة الطلب"><select value={filters.status} onChange={e=>updateFilter('status',e.target.value)}><option value="">حالة التسعير</option>{Object.entries(statuses).map(([key,[label]])=><option key={key} value={key}>{label}</option>)}</select></Field><button className="pricing-primary filter-submit"><Search size={15}/>البحث والتصفية</button></div></form></section><section className="pricing-table-card"><div className="pricing-table-head"><h2>طلبات التسعير</h2><label className="pricing-search"><Search size={16}/><input aria-label="ابحث برقم الطلب أو اسم العميل" placeholder="ابحث برقم الطلب، اسم العميل، الشركة ..." value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/></label></div><div className="pricing-table-scroll"><table className="pricing-table"><thead><tr><th><input type="checkbox" aria-label="تحديد كل الطلبات الظاهرة" checked={visible.length>0&&visible.every(r=>selected.includes(r.id))} onChange={e=>setSelected(e.target.checked?[...new Set([...selected,...visible.map(r=>r.id)])]:selected.filter(id=>!visible.some(r=>r.id===id)))}/></th>{['رقم الطلب','العميل','الشركة','تاريخ الطلب','نوع التسعير','عدد القطع','الحالة','الإجراءات'].map(t=><th key={t}>{t}</th>)}</tr></thead><tbody>{visible.map(r=><tr key={r.id}><td><input type="checkbox" aria-label={'تحديد '+formatId(r.id)} checked={selected.includes(r.id)} onChange={()=>toggle(r.id)}/></td><td><button className="pricing-request-id" onClick={()=>setDetail(r)}>{formatId(r.id)}</button></td><td>{r.client}</td><td><span className="pricing-company"><span className="bmw">{r.company.startsWith('بي')?'BMW':r.company.startsWith('فيات')?'FIAT':'MG'}</span>{r.company}</span></td><td className="muted">{r.date.slice(8)} مايو 25</td><td><Badge type={r.type==='quick'?'red':'blue'}>{r.type==='quick'?'سريع':'مجاني'}</Badge></td><td>{r.count}</td><td><Badge type={statuses[r.status][1]}>{statuses[r.status][0]}</Badge></td><td><div className="pricing-row-actions"><button className="def-eye" aria-label={'عرض '+formatId(r.id)} onClick={()=>setDetail(r)}><Eye size={15}/></button><button aria-label={'خيارات '+formatId(r.id)} onClick={()=>setActionMenu(actionMenu===r.id?null:r.id)}><MoreVertical size={17}/></button>{actionMenu===r.id&&<div className="pricing-row-menu"><button onClick={()=>{setDetail(r);setActionMenu(null)}}>عرض التفاصيل</button><button onClick={()=>{toggle(r.id);setActionMenu(null)}}>{selected.includes(r.id)?'إلغاء التحديد':'تحديد الطلب'}</button></div>}</div></td></tr>)}</tbody></table>{!filtered.length&&<p className="pricing-empty">لا توجد طلبات تطابق البحث.</p>}</div><div className="pricing-pagination"><button disabled={safePage===1} onClick={()=>setPage(safePage-1)}>السابق</button>{Array.from({length:pages},(_,i)=><button className={safePage===i+1?'selected':''} key={i} onClick={()=>setPage(i+1)}>{i+1}</button>)}<button disabled={safePage===pages} onClick={()=>setPage(safePage+1)}>التالي</button>{selected.length>0&&<span>{selected.length} طلب محدد</span>}</div></section></div>
+import React, { useEffect, useState } from "react";
+import {
+  Coins,
+  CheckCircle2,
+  Clock,
+  TriangleAlert,
+  Search,
+  Download,
+  Eye,
+  MoreVertical,
+  ArrowRight,
+} from "lucide-react";
+import { queryString } from "./admin-api";
+import useAdminResource from "./use-admin-resource";
+import { ResourceState, dateText, Money } from "./orders-ui";
+import { number } from "./dashboard-data";
+import {
+  pricingParams,
+  pricingStatuses,
+  pricingTypes,
+  allPricingRows,
+} from "./pricing-api";
+import PricingDetails from "./PricingDetails";
+import "./pricing.css";
+import { PricingBadge, PricingField } from "./pricing-ui";
+const emptyFilters = { company: "", date: "", type: "", status: "" };
+export default function Pricing({ onSessionExpired }) {
+  const [detail, setDetail] = useState(null),
+    [selected, setSelected] = useState([]),
+    [page, setPage] = useState(1),
+    [search, setSearch] = useState(""),
+    [query, setQuery] = useState(""),
+    [filters, setFilters] = useState(emptyFilters),
+    [applied, setApplied] = useState(emptyFilters),
+    [menu, setMenu] = useState(null),
+    [revision, setRevision] = useState(0),
+    [exporting, setExporting] = useState(false),
+    [notice, setNotice] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuery(search);
+      setPage(1);
+      setSelected([]);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+  useEffect(() => {
+    const close = (e) => {
+      if (!e.target.closest(".pricing-row-actions")) setMenu(null);
+    };
+    document.addEventListener("pointerdown", close);
+    return () => document.removeEventListener("pointerdown", close);
+  }, []);
+  const resource = useAdminResource(
+    "/api/pricing-requests/admin?" +
+      queryString(pricingParams({ filters: applied, search: query, page })),
+    revision,
+  );
+  const summary = useAdminResource(
+      "/api/pricing-requests/admin?limit=1&offset=0",
+      revision,
+    ),
+    accepted = useAdminResource(
+      "/api/pricing-requests/admin?hasAccepted=true&limit=1&offset=0",
+      revision,
+    ),
+    pending = useAdminResource(
+      "/api/pricing-requests/admin/pending-review",
+      revision,
+    ),
+    makes = useAdminResource("/api/cars/admin/makes");
+  const listResource =
+    resource.data && !Array.isArray(resource.data.data)
+      ? { ...resource, error: new Error("رد قائمة طلبات التسعير غير صالح.") }
+      : resource;
+  const rows = Array.isArray(resource.data?.data) ? resource.data.data : [],
+    counts = summary.data?.meta?.statusCounts || {},
+    total = resource.data?.meta?.total;
+  const missing = Array.isArray(pending.data?.data)
+    ? pending.data.data.filter((row) => Number(row.missing_products_count) > 0)
+        .length
+    : null;
+  const change = (key, value) =>
+    setFilters((old) => ({ ...old, [key]: value }));
+  async function exportFile() {
+    if (exporting) return;
+    setExporting(true);
+    setNotice("");
+    try {
+      const all = await allPricingRows(
+        pricingParams({ filters: applied, search: query }),
+      );
+      const list = selected.length
+        ? all.filter((row) => selected.includes(row.id))
+        : all;
+      const { exportPricingWorkbook } = await import("./spreadsheet");
+      exportPricingWorkbook(
+        list.map((row) => [
+          row.request_number || "—",
+          row.customer_name || "—",
+          [
+            row.make_name_ar || row.make_name_en,
+            row.model_name_ar || row.model_name_en,
+            row.year,
+          ]
+            .filter(Boolean)
+            .join(" "),
+          dateText(row.created_at),
+          pricingTypes[row.pricing_type] || row.pricing_type || "—",
+          row.parts_count ?? "",
+          row.status_label || pricingStatuses[row.status]?.[0] || row.status,
+        ]),
+      );
+      setNotice(`تم تصدير ${list.length} طلب من البيانات الفعلية.`);
+    } catch (e) {
+      setNotice(e.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+  if (detail)
+    return (
+      <PricingDetails
+        id={detail}
+        onBack={() => {
+          setDetail(null);
+          setRevision((n) => n + 1);
+        }}
+        onChanged={() => setRevision((n) => n + 1)}
+        onSessionExpired={onSessionExpired}
+      />
+    );
+  return (
+    <div className="pricing-content">
+      <div className="pricing-heading">
+        <div>
+          <h1>طلبات التسعير</h1>
+          {summary.data?.meta?.paidFeesTotal != null && (
+            <span className="fast-label">
+              رسوم التسعير المحصلة{" "}
+              <Money value={summary.data.meta.paidFeesTotal} />
+            </span>
+          )}
+        </div>
+        <button
+          className="pricing-export"
+          disabled={exporting || resource.loading || !!resource.error}
+          onClick={exportFile}
+        >
+          <Download size={16} />
+          {exporting ? "جارٍ التصدير…" : "تصدير Excel"}
+        </button>
+      </div>
+      <section className="pricing-statistics">
+        {[
+          [summary.data?.meta?.total, "إجمالي طلبات التسعير", "blue", Coins],
+          [accepted.data?.meta?.total, "تسعيرات مؤكدة", "green", CheckCircle2],
+          [counts.open, "قيد التسعير", "purple", Clock],
+          [missing, "تحتاج إضافة منتجات", "yellow", TriangleAlert],
+        ].map(([v, label, color, Icon]) => (
+          <div className={"pricing-stat " + color} key={label}>
+            <span className="stat-icon">
+              <Icon size={18} />
+            </span>
+            <b>{v == null ? "—" : number(v)}</b>
+            <span>{label}</span>
+          </div>
+        ))}
+      </section>
+      <ResourceState resource={summary} onLogin={onSessionExpired} />
+      <ResourceState resource={accepted} onLogin={onSessionExpired} />
+      <ResourceState
+        resource={
+          pending.data && !Array.isArray(pending.data.data)
+            ? {
+                ...pending,
+                error: new Error("رد الطلبات المحتاجة مراجعة غير صالح."),
+              }
+            : pending
+        }
+        onLogin={onSessionExpired}
+      />
+      {missing > 0 && (
+        <button
+          className="pricing-warning"
+          onClick={() => {
+            const next = { ...emptyFilters, status: "pending_admin_review" };
+            setFilters(next);
+            setApplied(next);
+            setSearch("");
+            setQuery("");
+            setPage(1);
+            setSelected([]);
+          }}
+        >
+          <TriangleAlert size={24} />
+          <div>
+            <b>
+              {number(missing)} طلبات تحتوي على منتجات غير متواجدة في قاعدة
+              البيانات
+            </b>
+            <small>اربط القطع بمنتجات قبل إرسال الطلب للموردين</small>
+          </div>
+          <ArrowRight size={22} />
+        </button>
+      )}
+      <section className="pricing-filter-card">
+        <h2>البحث والتصفية</h2>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            setApplied({ ...filters });
+            setPage(1);
+            setSelected([]);
+            setMenu(null);
+          }}
+        >
+          <div className="pricing-filter-grid">
+            <PricingField label="السيارات">
+              <select
+                aria-label="شركة السيارة"
+                value={filters.company}
+                disabled={makes.loading || !!makes.error}
+                onChange={(e) => change("company", e.target.value)}
+              >
+                <option value="">جميع شركات السيارات</option>
+                {(Array.isArray(makes.data?.data) ? makes.data.data : []).map(
+                  (make) => (
+                    <option key={make.id} value={make.id}>
+                      {make.name_ar || make.name_en}
+                    </option>
+                  ),
+                )}
+              </select>
+            </PricingField>
+            <PricingField label="أوقات التسعير">
+              <select
+                aria-label="أوقات التسعير"
+                disabled
+                title="فلتر الساعة غير موثق في مسار طلبات التسعير"
+              >
+                <option>جميع الأوقات</option>
+              </select>
+            </PricingField>
+            <PricingField label="تاريخ الطلب">
+              <input
+                aria-label="تاريخ طلب التسعير"
+                type="date"
+                value={filters.date}
+                onChange={(e) => change("date", e.target.value)}
+              />
+            </PricingField>
+            <PricingField label="نوع التسعير">
+              <select
+                aria-label="نوع التسعير"
+                value={filters.type}
+                onChange={(e) => change("type", e.target.value)}
+              >
+                <option value="">كل الأنواع</option>
+                {Object.entries(pricingTypes).map(([key, label]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </PricingField>
+            <PricingField label="حالة الطلب">
+              <select
+                aria-label="حالة طلب التسعير"
+                value={filters.status}
+                onChange={(e) => change("status", e.target.value)}
+              >
+                <option value="">كل الحالات</option>
+                {Object.entries(pricingStatuses).map(([key, [label]]) => (
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </PricingField>
+            <button className="pricing-primary filter-submit">
+              <Search size={15} />
+              البحث والتصفية
+            </button>
+          </div>
+          <ResourceState resource={makes} onLogin={onSessionExpired} />
+        </form>
+      </section>
+      {notice && (
+        <p className="pricing-api-notice" role="status">
+          {notice}
+        </p>
+      )}
+      <section className="pricing-table-card">
+        <div className="pricing-table-head">
+          <h2>طلبات التسعير</h2>
+          <label className="pricing-search">
+            <Search size={16} />
+            <input
+              aria-label="ابحث برقم الطلب أو اسم العميل"
+              placeholder="ابحث برقم الطلب، اسم العميل، الشركة ..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </label>
+        </div>
+        <ResourceState resource={listResource} onLogin={onSessionExpired} />
+        <div className="pricing-table-scroll">
+          <table className="pricing-table">
+            <thead>
+              <tr>
+                <th>
+                  <input
+                    type="checkbox"
+                    aria-label="تحديد كل الطلبات الظاهرة"
+                    checked={
+                      rows.length > 0 &&
+                      rows.every((row) => selected.includes(row.id))
+                    }
+                    onChange={(e) =>
+                      setSelected(
+                        e.target.checked
+                          ? [
+                              ...new Set([
+                                ...selected,
+                                ...rows.map((row) => row.id),
+                              ]),
+                            ]
+                          : selected.filter(
+                              (id) => !rows.some((row) => row.id === id),
+                            ),
+                      )
+                    }
+                  />
+                </th>
+                {[
+                  "رقم الطلب",
+                  "العميل",
+                  "الشركة",
+                  "تاريخ الطلب",
+                  "نوع التسعير",
+                  "عدد القطع",
+                  "الحالة",
+                  "الإجراءات",
+                ].map((label) => (
+                  <th key={label}>{label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row) => (
+                <tr key={row.id}>
+                  <td>
+                    <input
+                      type="checkbox"
+                      aria-label={"تحديد " + row.request_number}
+                      checked={selected.includes(row.id)}
+                      onChange={() =>
+                        setSelected((old) =>
+                          old.includes(row.id)
+                            ? old.filter((id) => id !== row.id)
+                            : [...old, row.id],
+                        )
+                      }
+                    />
+                  </td>
+                  <td>
+                    <button
+                      className="pricing-request-id"
+                      onClick={() => setDetail(row.id)}
+                    >
+                      {row.request_number || "—"}
+                    </button>
+                  </td>
+                  <td>{row.customer_name || "—"}</td>
+                  <td>
+                    <span className="pricing-company">
+                      {row.make_logo_url && (
+                        <img src={row.make_logo_url} alt="" />
+                      )}
+                      {[
+                        row.make_name_ar || row.make_name_en,
+                        row.model_name_ar || row.model_name_en,
+                        row.year,
+                      ]
+                        .filter(Boolean)
+                        .join(" ") || "—"}
+                    </span>
+                  </td>
+                  <td className="muted">{dateText(row.created_at)}</td>
+                  <td>
+                    <span
+                      className={
+                        "pricing-badge " +
+                        (row.pricing_type === "express" ? "red" : "blue")
+                      }
+                    >
+                      <i />
+                      {pricingTypes[row.pricing_type] ||
+                        row.pricing_type ||
+                        "—"}
+                    </span>
+                  </td>
+                  <td>
+                    {row.parts_count == null ? "—" : number(row.parts_count)}
+                  </td>
+                  <td>
+                    <PricingBadge
+                      status={row.status}
+                      label={row.status_label}
+                    />
+                  </td>
+                  <td>
+                    <div className="pricing-row-actions">
+                      <button
+                        className="def-eye"
+                        aria-label={"عرض " + row.request_number}
+                        onClick={() => setDetail(row.id)}
+                      >
+                        <Eye size={15} />
+                      </button>
+                      <button
+                        aria-label={"خيارات " + row.request_number}
+                        onClick={() => setMenu(menu === row.id ? null : row.id)}
+                      >
+                        <MoreVertical size={17} />
+                      </button>
+                      {menu === row.id && (
+                        <div className="pricing-row-menu">
+                          <button
+                            onClick={() => {
+                              setDetail(row.id);
+                              setMenu(null);
+                            }}
+                          >
+                            عرض التفاصيل
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDetail(row.id);
+                              setMenu(null);
+                            }}
+                          >
+                            إجراءات الطلب
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          {!resource.loading && !listResource.error && !rows.length && (
+            <p className="pricing-empty">لا توجد طلبات تطابق البحث.</p>
+          )}
+        </div>
+        <div className="pricing-pagination">
+          <button
+            disabled={page === 1 || resource.loading}
+            onClick={() => {
+              setPage(page - 1);
+              setMenu(null);
+            }}
+          >
+            السابق
+          </button>
+          <span>
+            صفحة {number(page)}
+            {total != null
+              ? ` من ${number(Math.max(1, Math.ceil(total / 8)))}`
+              : ""}
+          </span>
+          <button
+            disabled={
+              resource.loading || total == null || page * 8 >= Number(total)
+            }
+            onClick={() => {
+              setPage(page + 1);
+              setMenu(null);
+            }}
+          >
+            التالي
+          </button>
+          {selected.length > 0 && (
+            <span>{number(selected.length)} طلب محدد</span>
+          )}
+        </div>
+      </section>
+    </div>
+  );
 }

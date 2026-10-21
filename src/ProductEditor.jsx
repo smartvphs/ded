@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import "./products.css";
 import {
   FileText,
   Star,
@@ -131,11 +132,12 @@ export default function ProductEditor({
   mode,
   onSaved,
   onComplete,
+  initialProduct,
   onBack,
 }) {
   const [id, setId] = useState(mode === "add" ? null : product.id),
     [draft, setDraft] = useState(() => ({
-      ...productDraft(),
+      ...productDraft(mode === "add" ? initialProduct : undefined),
       isActive: mode === "add",
     })),
     [baseline, setBaseline] = useState(null),
@@ -329,7 +331,7 @@ export default function ProductEditor({
       const published = verified.isActive && !["unpublished", "deleted"].includes(confirmed.data.status);
       setNotice(published ? "تم نشر المنتج على المنصة." : "تم حفظ المنتج بدون نشر.");
       onSaved?.();
-      onComplete?.({published});
+      onComplete?.({published, id:currentId});
     } catch (e) {
       if (stage === "create" && (!e.status || e.status >= 500))
         uncertainCreate.current = true;

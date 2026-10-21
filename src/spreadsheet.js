@@ -21,3 +21,9 @@ export function downloadTemplate(columns){
  utils.book_append_sheet(book,utils.aoa_to_sheet([['العمود','مطلوب','مثال','ملاحظات'],...columns.map(c=>[c.header||c.key,c.required?'نعم':'لا',c.example??'',c.notes??''])]),'شرح الأعمدة');
  writeFileXLSX(book,'product-import-template.xlsx');
 }
+
+export function exportPricingWorkbook(rows){
+ const book=utils.book_new();
+ utils.book_append_sheet(book,utils.aoa_to_sheet([['رقم الطلب','العميل','الشركة','تاريخ الطلب','نوع التسعير','عدد القطع','الحالة'],...rows]),'طلبات التسعير');
+ writeFileXLSX(book,'pricing-requests.xlsx');
+}
