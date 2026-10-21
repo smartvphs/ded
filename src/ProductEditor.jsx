@@ -61,7 +61,7 @@ function Choice({ label, rows = [], value, onChange, disabled = false, emptyLabe
           </option>
         ))}
       </select>
-      <ChevronDown size={16} />
+      <ChevronDown size={16} className="pp-chevron" />
     </Field>
   );
 }
