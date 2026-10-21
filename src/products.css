@@ -17,3 +17,13 @@
 .pp-product-name>img,.pp-product-name>svg{width:39px;height:39px;justify-self:center;flex-shrink:0}
 .pp-product-name>span{min-width:0;white-space:normal;overflow-wrap:anywhere;line-height:1.6}
 .pp-product-name small{margin-top:2px}
+
+.pp-editor .pp-product-gallery{position:relative;display:grid;place-items:center}
+.pp-editor .pp-product-gallery>img{display:block;width:100%;height:100%;max-height:none;object-fit:cover}
+.pp-product-gallery .pp-gallery-arrow{position:absolute;top:50%;transform:translateY(-50%);width:30px;height:30px;display:grid;place-items:center;border-radius:50%;background:#ffffffeb;color:#172032;box-shadow:0 2px 8px #17203222;padding:0;z-index:1}
+.pp-gallery-prev{right:8px}.pp-gallery-next{left:8px}
+.pp-gallery-dots{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);display:flex;direction:ltr;gap:6px;align-items:center;justify-content:center;max-width:90%;flex-wrap:wrap;padding:5px 8px;border-radius:16px;background:#ffffffd9}
+.pp-gallery-dots>button{width:7px;height:7px;padding:0;border-radius:50%;background:#a6b4ce}
+.pp-gallery-dots>button.active{background:#195bea;width:16px;border-radius:5px}
+.pp-gallery-thumb{display:block;padding:0;overflow:hidden;border-radius:8px}
+.pp-gallery-thumb:focus-visible,.pp-gallery-arrow:focus-visible,.pp-gallery-dots>button:focus-visible{outline:2px solid #195bea;outline-offset:3px}

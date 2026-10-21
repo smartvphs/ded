@@ -27,6 +27,7 @@ import {
   Sprite,
 } from "./products-ui";
 import { adminRequest } from "./admin-api";
+import ProductGallery from "./ProductGallery";
 import useAdminResource from "./use-admin-resource";
 import { uploadContentImage } from "./definitions-api";
 import {
@@ -142,6 +143,7 @@ export default function ProductEditor({
     [error, setError] = useState(""),
     [supplierSearch, setSupplierSearch] = useState(""),
     [supplierQuery, setSupplierQuery] = useState("");
+  const [selectedImage, setSelectedImage] = useState("");
   const lock = useRef(false),
     uncertainCreate = useRef(false),
     fileInput = useRef();
@@ -487,7 +489,9 @@ export default function ProductEditor({
                     <div className="pp-thumbnails">
                       {draft.images.map((url, i) => (
                         <div key={url + i} className="pp-editor-image">
-                          <img src={url} alt={"صورة المنتج " + (i + 1)} />
+                          <button type="button" className="pp-gallery-thumb" aria-label={"معاينة صورة المنتج " + (i + 1)} onClick={() => setSelectedImage(url)}>
+                            <img src={url} alt={"صورة المنتج " + (i + 1)} />
+                          </button>
                           <button
                             aria-label={"حذف الصورة " + (i + 1)}
                             className="pp-remove"
@@ -850,13 +854,7 @@ export default function ProductEditor({
             <aside className="pp-editor-aside">
               <Panel title="معاينة المنتج" className="pp-preview-panel">
                 <div className="pp-preview-card">
-                  <div className="pp-preview-image">
-                    {draft.images[0] ? (
-                      <img src={draft.images[0]} alt="معاينة المنتج" />
-                    ) : (
-                      <Package size={72} />
-                    )}
-                  </div>
+                  <ProductGallery images={draft.images} selected={selectedImage} onSelect={setSelectedImage} />
                   <h3>{draft.name || "اسم المنتج"}</h3>
                   <div className="pp-preview-price">
                     {draft.discountPrice !== "" && <del>{draft.price}</del>}
