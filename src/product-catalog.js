@@ -60,3 +60,11 @@ export function writeSpecification(specifications,key,value){
  // Reuse the original persisted field name, but replace all of its aliases.
  return String(value).trim()?[...remaining,{specName:existing?.specName??existing?.spec_name??key,specValue:String(value)}]:remaining;
 }
+
+// The storefront's main product sections use positions 1–4 and 6; position 5 is services.
+// Keep a saved legacy category visible while editing, without offering it for new products.
+export function mainProductCategories(categories, selectedId) {
+  const rows = categories.filter(row => !parentId(row) && row.type !== 'service' && [1,2,3,4,6].includes(Number(row.sort_order ?? row.sortOrder)));
+  const current = categories.find(row => row.id === selectedId);
+  return current && !rows.some(row => row.id === current.id) ? [...rows,current] : rows;
+}

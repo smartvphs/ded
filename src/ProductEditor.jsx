@@ -36,7 +36,7 @@ import {
   productBody,
   compatibilityBody,
 } from "./product-editor-model";
-import { readSpecification, writeSpecification } from "./product-catalog";
+import { readSpecification, writeSpecification, mainProductCategories } from "./product-catalog";
 import { catalogOptions } from "./catalog-options";
 import {
   RelatedProducts,
@@ -191,7 +191,7 @@ export default function ProductEditor({
   }, [detail.data, product.id]);
   const set = (k, v) => setDraft((d) => ({ ...d, [k]: v }));
   const cats = Array.isArray(categories.data?.data) ? categories.data.data : [],
-    roots = cats.filter((x) => !x.parent_id),
+    roots = mainProductCategories(cats, id ? draft.categoryId : null),
     subs = cats.filter((x) => x.parent_id === draft.categoryId);
   const brandRows = Array.isArray(brands.data?.data) ? brands.data.data : [];
   const selectableBrands =
