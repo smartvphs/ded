@@ -695,7 +695,8 @@ const XLSX = require("xlsx");
       1,
     );
     await p.getByRole("tab", { name: "كتالوج الخدمات", exact: true }).click();
-    await p.getByRole("button", { name: "تعديل الخدمة", exact: true }).click();
+    await p.getByRole("button", {name:"إجراءات فحص موثق",exact:true}).click();
+    await p.getByRole("menuitem", { name: "تعديل الخدمة", exact: true }).click();
     await p
       .getByLabel("الإسم الأساسي", { exact: true })
       .fill("فحص بعد التعديل");

@@ -7,6 +7,9 @@ import {
   CheckCircle2,
   TriangleAlert,
   Shuffle,
+  MoreVertical,
+  Pencil,
+  Eye,
 } from "lucide-react";
 import { adminRequest, queryString } from "./admin-api";
 import useAdminResource from "./use-admin-resource";
@@ -16,6 +19,39 @@ import { State } from "./ProductExtras";
 import ServiceEditor from "./ServiceEditor";
 import { OrderDetail } from "./OrderDetail";
 import "./orders-page.css";
+function ServiceActions({ name, label, onSelect, order = false }) {
+  const [position, setPosition] = useState(null);
+  const trigger = React.useRef(null), menu = React.useRef(null);
+  React.useEffect(() => {
+    if (!position) return;
+    const close = (event) => {
+      if (!trigger.current?.contains(event.target) && !menu.current?.contains(event.target)) setPosition(null);
+    };
+    const dismiss = () => setPosition(null);
+    const keydown = (event) => { if (event.key === "Escape") {setPosition(null);trigger.current?.focus();} };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", keydown);
+    window.addEventListener("scroll", dismiss, true);
+    window.addEventListener("resize", dismiss);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", keydown);
+      window.removeEventListener("scroll", dismiss, true);
+      window.removeEventListener("resize", dismiss);
+    };
+  }, [position]);
+  const Icon = order ? Eye : Pencil;
+  return <>
+    <button ref={trigger} className="pp-menu-trigger" aria-label={"إجراءات " + name} aria-expanded={Boolean(position)} aria-haspopup="menu"
+      onClick={(event) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setPosition(position ? null : {top:rect.bottom - 10,left:Math.max(10,rect.left - 62)});
+      }}><MoreVertical size={24} /></button>
+    {position && <div ref={menu} className="pp-menu" role="menu" style={position}>
+      <button role="menuitem" onClick={() => {setPosition(null);onSelect();}}><Icon size={16} />{label}</button>
+    </div>}
+  </>;
+}
 function ServiceOrderRow({ row, onOpen }) {
   const detail = useAdminResource(
     "/api/orders/admin/" + encodeURIComponent(row.id),
@@ -93,9 +129,7 @@ function ServiceOrderRow({ row, onOpen }) {
           row.status}
       </td>
       <td>
-        <button className="pp-button pp-small-button" onClick={onOpen}>
-          التفاصيل
-        </button>
+        <ServiceActions name={row.order_number || row.id} label="التفاصيل" onSelect={onOpen} order />
       </td>
     </tr>
   );
@@ -315,12 +349,7 @@ export default function ServiceProducts({ navigation, onSessionExpired }) {
                     </td>
                     <td>{x.isActive ? "نشط" : "غير نشط"}</td>
                     <td>
-                      <button
-                        className="pp-button pp-small-button"
-                        onClick={() => setEditing({ id: x.id })}
-                      >
-                        تعديل الخدمة
-                      </button>
+                      <ServiceActions name={x.name} label="تعديل الخدمة" onSelect={() => setEditing({ id: x.id })} />
                     </td>
                   </tr>
                 ),
