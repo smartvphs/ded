@@ -1,10 +1,461 @@
-import React,{useState}from'react';import{Package,Car,CalendarDays,Coins}from'lucide-react';import './category-analytics.css';
-const colors=['#195bea','#813cf3','#07a673','#f4ab18','#df1677','#cc6918'];
-function Card({title,children,className=''}){return <section className={'ca-card '+className}><h2>{title}</h2>{children}</section>}
-function Ring({value,label,values=[34,15,22,5,12,12],palette=colors}){let start=0;return <div className="ca-ring"><svg viewBox="0 0 240 240" role="img" aria-label={value+' '+label}><g transform="rotate(-90 120 120)">{values.map((n,i)=>{const offset=start;start+=n;return <circle key={i} cx="120" cy="120" r="83" fill="none" stroke={palette[i%palette.length]} strokeWidth="37" pathLength="100" strokeDasharray={`${Math.max(0,n-1)} ${101-n}`} strokeDashoffset={-offset}/>})}</g></svg><div><b>{value}</b><span>{label}</span></div></div>}
-function Legend({labels,palette=colors}){return <div className="ca-legend">{labels.map((label,i)=><span key={label}><i style={{background:palette[i%palette.length]}}/>{label}</span>)}</div>}
-function Trend({factor=1}){return <svg viewBox="0 0 600 330" className="ca-trend" role="img" aria-label="مسار الطلبات والإيرادات"><defs><linearGradient id="ca-area" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#3277ff" stopOpacity=".2"/><stop offset="1" stopColor="#3277ff" stopOpacity="0"/></linearGradient></defs>{[30,60,90,120,150,180,210,240,270].map((y,i)=><g key={y}><line x1="40" x2="580" y1={y} y2={y} stroke="#eff3f9"/><text x="7" y={y+5} fill="#a5b6d3" fontSize="11">{Math.round((400-i*50)*factor)}</text></g>)}<path d="M40 182 C66 201 77 251 103 221 S142 141 166 161 S196 237 219 218 S249 159 271 177 S302 218 320 246 S344 258 366 224 S393 212 412 219 S446 195 462 165 S485 158 507 176 S544 190 580 144 L580 270 L40 270Z" fill="url(#ca-area)"/><path d="M40 182 C66 201 77 251 103 221 S142 141 166 161 S196 237 219 218 S249 159 271 177 S302 218 320 246 S344 258 366 224 S393 212 412 219 S446 195 462 165 S485 158 507 176 S544 190 580 144" stroke="#5688ff" strokeWidth="2" fill="none"/><path d="M40 87 C64 118 90 141 109 133 S144 93 164 102 S201 129 220 117 S253 105 269 118 S299 128 320 155 S343 153 366 122 S393 124 411 122 S444 98 462 93 S500 91 520 93 S555 67 580 40" stroke="#ff9d41" strokeDasharray="3 3" fill="none" strokeWidth="2"/>{['نوفمبر','أكتوبر','سبتمبر','أغسطس','يوليو','يونيو','مايو','أبريل','مارس','فبراير','يناير'].map((m,i)=><text key={m} x={40+i*53} y="305" textAnchor="middle" fill="#8494ad" fontSize="10">{m}</text>)}</svg>}
-function Monthly(){return <svg viewBox="0 0 500 370" className="ca-monthly" aria-label="مقارنة شهرية للطلبات والتسعيرات" role="img">{Array.from({length:9},(_,i)=><g key={i}><line x1="40" x2="485" y1={330-i*37} y2={330-i*37} stroke="#eef2f8"/><text x="5" y={335-i*37} fill="#a1b3d2" fontSize="11">{i*50}</text></g>)}{[[190,135],[160,160],[75,310],[200,135],[165,155],[160,160],[285,150]].map(([a,b],i)=><g key={i}><rect x={58+i*60} y={330-a*.85} height={a*.85} width="12" fill="#195bea" rx="2"/><rect x={73+i*60} y={330-b*.85} height={b*.85} width="12" fill="#fbc018" rx="2"/><text x={70+i*60} y="358" textAnchor="middle" fontSize="10" fill="#a0b2d1">{['Mar','Feb','Jan','Apr','May','Jun','Jul'][i]}</text></g>)}</svg>}
-function Table({heads,rows}){return <div className="ca-table-scroll"><table className="ca-table"><thead><tr>{heads.map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{rows.map((r,i)=><tr key={i}>{r.map((c,j)=><td key={j}>{c}</td>)}</tr>)}</tbody></table></div>}
-const companyRows=[['تويوتا',5,142,248,'84k ر.س'],['هيونداي موتورز',4,98,198,'53 ر.س'],['فيات تيبو 2024',3,86,142,'64 ر.س'],['هيونداي موتورز',2,64,118,'58 ر.س'],['بي ام دبليو 2025',1,42,96,'15 ر.س'],['فيات تيبو 2024',2,28,64,'6 ر.س']];
-export default function CategoryAnalytics(){const[period,setPeriod]=useState('7 أيام'),[search,setSearch]=useState('');const factor=period==='30 يومًا'?4:period==='سنة'?12:1;return <div className="category-analytics"><div className="ca-period"><select aria-label="فترة إحصائيات قطع الغيار" value={period} onChange={e=>setPeriod(e.target.value)}><option>7 أيام</option><option>30 يومًا</option><option>سنة</option></select></div><div className="ca-stats">{[['2,340','إجمالي المنتجات','blue',Package],['1,842','إجمالي الطلبات','purple',Package],['486','طلبات التسعير','yellow',CalendarDays],['147','شركة وسيارة','pink',Car],[(284000*factor).toLocaleString('en-US'),'إيرادات','green',Coins]].map(([v,label,color,I])=><div className={'ca-stat '+color} key={label}><span className="stat-icon"><I size={19}/></span><b>{v}</b><span>{label}</span></div>)}</div><div className="ca-top-grid"><Card title="مسار الطلبات والإيرادات"><Trend factor={factor}/><Legend labels={['طلبات','طلبات التسعير']} palette={['#195bea','#ff9d41']}/><div className="ca-chart-summary">طلبات عادية 1,842 · طلبات تسعير 486 · إجمالي الإيراد {(284000*factor).toLocaleString('en-US')}</div></Card><Card title="الشركات الأكثر طلبًا"><Ring value="147K" label="طلب"/><Legend labels={['تويوتا 34%','BMW 15%','هيونداي 22%','نيسان 5%','مرسيدس 12%','كيا 9%']}/></Card></div><div className="ca-three-grid"><Card title="السيارات الأكثر طلبًا"><div className="ca-top-cars">{[['تويوتا كامري','2021–2023 · 68 تسعير',284],['هيونداي سوناتا','2019–2022 · 44 تسعير',198],['BMW 320i','2019–2023 · 42 تسعير',142],['تويوتا كورولا','2018–2023 · 32 تسعير',118],['كيا سبورتاج','2020–2023 · 24 تسعير',96]].map(([name,years,count])=><div key={name}><span><b>{name}</b><small>{years}</small></span><strong>{count}<br/>طلب</strong></div>)}</div></Card><Card title="أكثر فئات القطع طلبًا"><div className="ca-horizontal-bars">{[['ميكانيكا',160],['كهربائيات',100],['عفشة وهيكل',60],['فرامل',50],['تكييف وتبريد',40],['الإضاءة',45],['زيوت وشحوم',30],['التواصل الخارجي',20]].map(([name,v],i)=><div key={name} style={{background:`linear-gradient(90deg,${['#3563ed','#219cae','#ef8a19','#e86473','#965bdd','#28a8c4','#50b5a2','#5970d5'][i]},#fafcff)`}}><span>{name}</span><b>{v}</b></div>)}</div></Card><Card title="إحصائيات التسعير"><div className="ca-mini-metrics">{[['72','طلب هذا الأسبوع'],['98','معدل التحويل'],['4.2 ساعة','متوسط وقت الرد'],['1,240 ر.س','معدل القبول']].map(([v,l])=><div key={l}><b>{v}</b><small>{l}</small></div>)}</div><Ring value="312" label="تسعير" values={[32,27,18,23]} palette={['#195bea','#579aff','#8bbaff','#c5deff']}/><Legend labels={['مؤكدة 312','معلقة 98','ملغية 48','منتهية 28']} palette={['#195bea','#579aff','#8bbaff','#c5deff']}/></Card></div><div className="ca-pair-grid"><Card title="جدول أداء الشركات"><input className="ca-search" aria-label="ابحث في أداء الشركات" placeholder="ابحث ..." value={search} onChange={e=>setSearch(e.target.value)}/><Table heads={['الشركة','الطلبات','التسعيرات','المنتجات','الإيراد']} rows={companyRows.filter(r=>r[0].includes(search))}/></Card><Card title="تنبيهات ذكية"><div className="ca-alerts">{[['تويوتا كامري الأعلى طلبًا','طلبات كامري 2021–2023 ارتفعت 34% هذا الشهر. ينصح بزيادة مخزون فرامل وزيوت المحرك لهذه السيارة.','🔥'],['طلبات الكهرباء في ارتفاع','قطع الإضاءة والإلكترونيات سجّلت 142 طلبًا بزيادة واضحة.','⚡'],['بطء في تسعير BMW','متوسط وقت الرد على سيارات BMW يبلغ 7.2 ساعة.','⚠️'],['تأخير في شحنة هيونداي','شحنات منتجات هيونداي تستغرق 15 يومًا، وهي أعلى من المعدل.','🚚'],['زيادة في مبيعات فورد','ارتفعت مبيعات فورد هذا الشهر. راجع المخزون المتاح.','🚀']].map(([name,desc,icon])=><div key={name}><span>{icon}</span><div><b>{name}</b><p>{desc}</p></div><i/></div>)}</div></Card></div><div className="ca-pair-grid"><Card title="أكثر السيارات طلبًا"><Table heads={['السيارة','الشركة','الطلبات','التسعير']} rows={['كامري','سوناتا','320i','كورولا','سبورتاج','نيسان'].map((name,i)=>[name,['تويوتا','هيونداي','BMW','مرسيدس','هيونداي','BMW'][i],[142,98,86,64,42,28][i],[68,44,42,32,24,64][i]])}/></Card><Card title="مقارنة شهرية"><Monthly/><Legend labels={['طلبات','تسعيرات']} palette={['#195bea','#fbc018']}/></Card></div><div className="ca-pair-grid"><Card title="توزيع جودة القطع المطلوبة"><p className="ca-subtitle">ماذا يفضل العملاء؟</p><Ring value="2,340" label="قطعة" values={[36,27,25,12]} palette={['#195bea','#579aff','#8bbaff','#c5deff']}/><Legend labels={['أصلي 36%','تجاري 27%','مستعمل 25%','بديل 12%']} palette={['#195bea','#579aff','#8bbaff','#c5deff']}/><h3 className="ca-quality-heading">متوسط السعر حسب الجودة</h3><div className="ca-mini-metrics">{[['3,200 ر.س','أصلي'],['1,800 ر.س','تجاري'],['950 ر.س','بديل'],['480 ر.س','مستعمل']].map(([v,l])=><div key={l}><b>{v}</b><small>{l}</small></div>)}</div></Card><Card title="تفاصيل فئات القطع"><Table heads={['الفئة','الطلبات','التسعيرات','متوسط السعر','الإيراد']} rows={['كهرباء وإلكترونيات','ميكانيكا المحرك','العفشة والتعليق','الفرامل','التكييف والتبريد','الإضاءة'].map((name,i)=>[name,[142,98,86,64,42,28][i],[68,44,42,32,24,64][i],[840,1240,980,620,1480,420][i]+' ر.س',companyRows[i][4]])}/></Card></div><div className="ca-pair-grid"><Card title="وقت استجابة الموردين"><p className="ca-subtitle">حسب فئة القطعة (بالساعات)</p><div className="ca-pill-bars">{[['كهرباء',3],['ميكانيكا',5],['عفشة',4],['فرامل',2],['تكييف',6],['إضاءة',3]].map(([name,v])=><div key={name}><span>{v}h</span><i style={{height:v*19+'px'}}/><small>{name}</small></div>)}</div></Card><Card title="أكثر سنوات الصنع طلبًا"><div className="ca-pill-bars">{[[2026,70],[2025,100],[2024,200],[2023,70],[2022,150],[2021,50]].map(([name,v])=><div key={name}><span>{v}</span><i style={{height:v*.6+'px'}}/><small>{name}</small></div>)}</div></Card></div></div>}
+import { CategoryTrend, CategoryMonthly } from "./CategoryCharts";
+import React, { useState } from "react";
+import { Package, Car, CalendarDays, Coins, TriangleAlert } from "lucide-react";
+import useAdminResource from "./use-admin-resource";
+import { ResourceState, Money } from "./orders-ui";
+import { queryString } from "./admin-api";
+import "./category-analytics.css";
+const colors = [
+  "#195bea",
+  "#813cf3",
+  "#07a673",
+  "#f4ab18",
+  "#df1677",
+  "#cc6918",
+];
+const count = (n) =>
+  n == null
+    ? "—"
+    : Number(n).toLocaleString("en-US", { maximumFractionDigits: 2 });
+const rows = (value) => (Array.isArray(value) ? value : []);
+function Card({ title, children }) {
+  return (
+    <section className="ca-card">
+      <h2>{title}</h2>
+      {children}
+    </section>
+  );
+}
+function Empty() {
+  return (
+    <p className="cm-api-muted">لا توجد بيانات متاحة خلال الفترة المحددة.</p>
+  );
+}
+function Table({ heads, rows: items }) {
+  return !items.length ? (
+    <Empty />
+  ) : (
+    <div className="ca-table-scroll">
+      <table className="ca-table">
+        <thead>
+          <tr>
+            {heads.map((h) => (
+              <th key={h}>{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {items.map((row, i) => (
+            <tr key={i}>
+              {row.map((cell, j) => (
+                <td key={j}>{cell ?? "—"}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+function Ring({ items, label }) {
+  const total = items.reduce((s, r) => s + (Number(r.value) || 0), 0);
+  let start = 0;
+  return total > 0 ? (
+    <>
+      <div className="ca-ring">
+        <svg viewBox="0 0 240 240" role="img" aria-label={label}>
+          <g transform="rotate(-90 120 120)">
+            {items.map((item, i) => {
+              const size = (Number(item.value) / total) * 100,
+                offset = start;
+              start += size;
+              return (
+                <circle
+                  key={i}
+                  cx="120"
+                  cy="120"
+                  r="83"
+                  fill="none"
+                  stroke={colors[i % colors.length]}
+                  strokeWidth="37"
+                  pathLength="100"
+                  strokeDasharray={`${size} ${100 - size}`}
+                  strokeDashoffset={-offset}
+                />
+              );
+            })}
+          </g>
+        </svg>
+        <div>
+          <b>{count(total)}</b>
+          <span>{label}</span>
+        </div>
+      </div>
+      <div className="ca-legend">
+        {items.map((item, i) => (
+          <span key={i}>
+            <i style={{ background: colors[i % colors.length] }} />
+            {item.label} {count(item.value)}
+          </span>
+        ))}
+      </div>
+    </>
+  ) : (
+    <Empty />
+  );
+}
+function Bars({ items, label }) {
+  const max = Math.max(1, ...items.map((r) => Number(r.value) || 0));
+  return items.length ? (
+    <div className="ca-api-bars" aria-label={label}>
+      {items.map((row, i) => (
+        <div key={i}>
+          <span>{row.label}</span>
+          <i
+            style={{
+              width: (Math.max(0, Number(row.value) || 0) / max) * 100 + "%",
+              background: colors[i % colors.length],
+            }}
+          />
+          <b>{count(row.value)}</b>
+        </div>
+      ))}
+    </div>
+  ) : (
+    <Empty />
+  );
+}
+export default function CategoryAnalytics({ onSessionExpired }) {
+  const [period, setPeriod] = useState("30"),
+    [page, setPage] = useState(1),
+    [search, setSearch] = useState(""),
+    [sort, setSort] = useState("revenue");
+  const to = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Asia/Riyadh",
+    }),
+    fromDate = new Date(to + "T00:00:00Z");
+  fromDate.setUTCDate(fromDate.getUTCDate() - (Number(period) - 1));
+  const from = fromDate.toISOString().slice(0, 10);
+  const resource = useAdminResource(
+    "/api/admin/reports/performance?" +
+      queryString({
+        from,
+        to,
+        groupBy: period === "365" ? "month" : "day",
+        limit: 10,
+        page,
+        suppliersSort: sort,
+      }),
+  );
+  const invalid =
+    resource.data &&
+    (!resource.data.data?.kpis || Array.isArray(resource.data.data.kpis));
+  const data = invalid ? null : resource.data?.data,
+    k = data?.kpis || {},
+    cars = rows(data?.topCars?.items),
+    categories = rows(data?.topCategories?.items),
+    quality = rows(data?.partsQuality?.items),
+    suppliers = rows(data?.suppliersPerformance?.items),
+    pricing = rows(data?.insights?.metrics?.pricingByMake),
+    years = rows(data?.topYears?.items);
+  const makes = new Map();
+  for (const car of cars) {
+    const old = makes.get(car.makeId) || {
+      label: car.makeNameAr || car.makeNameEn || "—",
+      value: 0,
+    };
+    old.value += Number(car.pricingRequests) || 0;
+    makes.set(car.makeId, old);
+  }
+  return (
+    <div className="category-analytics">
+      <div className="ca-period">
+        <span className="cm-api-period">
+          التقرير يشمل أداء المنصة بكل أقسامها
+        </span>
+        <select
+          aria-label="فترة إحصائيات قطع الغيار"
+          value={period}
+          onChange={(e) => {
+            setPeriod(e.target.value);
+            setPage(1);
+          }}
+        >
+          <option value="7">7 أيام</option>
+          <option value="30">30 يومًا</option>
+          <option value="365">سنة</option>
+        </select>
+      </div>
+      <ResourceState
+        resource={
+          invalid
+            ? { ...resource, error: new Error("رد تقرير الإحصائيات غير صالح.") }
+            : resource
+        }
+        onLogin={onSessionExpired}
+      />
+      {data && (
+        <>
+          <p className="cm-api-period">
+            من {data.period?.from || from} إلى {data.period?.to || to} — بتوقيت
+            السعودية
+          </p>
+          <div className="ca-stats">
+            {[
+              [k.sales?.netRevenue, "صافي المبيعات", "blue", Coins, true],
+              [k.orders?.total, "إجمالي الطلبات", "purple", Package],
+              [
+                k.pricingRequests?.total,
+                "طلبات التسعير",
+                "yellow",
+                CalendarDays,
+              ],
+              [k.activeCompanies?.count, "الموردون المعتمدون", "pink", Car],
+              [k.profit?.amount, "الأرباح المعروفة", "green", Coins, true],
+            ].map(([v, label, color, Icon, money]) => (
+              <div className={"ca-stat " + color} key={label}>
+                <span className="stat-icon">
+                  <Icon size={19} />
+                </span>
+                <b>
+                  {v == null ? "—" : money ? <Money value={v} /> : count(v)}
+                </b>
+                <span>{label}</span>
+              </div>
+            ))}
+          </div>
+          {k.profit?.isPartial && (
+            <p className="cm-api-notice">
+              الأرباح جزئية؛ بعض المنتجات ليس لها تكلفة محفوظة.
+            </p>
+          )}
+          <div className="ca-top-grid">
+            <Card title="مسار الطلبات والإيرادات">
+              <CategoryTrend series={rows(data.ordersRevenueTrend?.series)} />
+            </Card>
+            <Card title="الشركات الأكثر طلبًا للتسعير">
+              <Ring items={[...makes.values()]} label="طلب تسعير" />
+            </Card>
+          </div>
+          <div className="ca-three-grid">
+            <Card title="السيارات الأكثر طلبًا">
+              <div className="ca-top-cars">
+                {cars.map((r, i) => (
+                  <div key={i}>
+                    <span>
+                      <b>
+                        {[
+                          r.makeNameAr || r.makeNameEn,
+                          r.modelNameAr || r.modelNameEn,
+                        ]
+                          .filter(Boolean)
+                          .join(" ") || "—"}
+                      </b>
+                      <small>{count(r.ordersCount)} طلب شراء</small>
+                    </span>
+                    <strong>
+                      {count(r.pricingRequests)}
+                      <br />
+                      تسعير
+                    </strong>
+                  </div>
+                ))}
+                {!cars.length && <Empty />}
+              </div>
+            </Card>
+            <Card title="أكثر فئات القطع طلبًا">
+              <Bars
+                label="طلبات الشراء حسب الفئة"
+                items={categories.map((r) => ({
+                  label: r.nameAr || r.nameEn || "—",
+                  value: r.ordersCount,
+                }))}
+              />
+            </Card>
+            <Card title="إحصائيات التسعير">
+              <Ring
+                label="طلب تسعير"
+                items={[
+                  {
+                    label: "بانتظار تسعير",
+                    value: k.pricingRequests?.awaitingQuote,
+                  },
+                  { label: "تم تسعيرها", value: k.pricingRequests?.quoted },
+                  { label: "مؤكدة", value: k.pricingRequests?.confirmed },
+                  { label: "حالات أخرى", value: k.pricingRequests?.other },
+                ]}
+              />
+            </Card>
+          </div>
+          <div className="ca-pair-grid">
+            <Card title="أداء الموردين">
+              <div className="ca-api-tools">
+                <input
+                  className="ca-search"
+                  aria-label="ابحث في أداء الموردين"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="بحث في الصفحة الحالية..."
+                />
+                <select
+                  aria-label="ترتيب أداء الموردين"
+                  value={sort}
+                  onChange={(e) => {
+                    setSort(e.target.value);
+                    setPage(1);
+                  }}
+                >
+                  <option value="revenue">الإيراد</option>
+                  <option value="orders">الطلبات</option>
+                  <option value="quotations">العروض</option>
+                  <option value="products">المنتجات</option>
+                </select>
+              </div>
+              <Table
+                heads={[
+                  "المورد",
+                  "الطلبات",
+                  "العروض",
+                  "المنتجات النشطة",
+                  "صافي الإيراد",
+                ]}
+                rows={suppliers
+                  .filter((r) => (r.name || "").includes(search))
+                  .map((r) => [
+                    r.name,
+                    count(r.ordersCount),
+                    count(r.quotationsCount),
+                    count(r.activeProducts),
+                    r.netRevenue == null ? "—" : <Money value={r.netRevenue} />,
+                  ])}
+              />
+              <div className="pricing-pagination">
+                <button
+                  disabled={page <= 1 || resource.loading}
+                  onClick={() => setPage((n) => n - 1)}
+                >
+                  السابق
+                </button>
+                <span>{page}</span>
+                <button
+                  disabled={
+                    resource.loading ||
+                    (data.suppliersPerformance?.total != null
+                      ? page * 10 >= Number(data.suppliersPerformance.total)
+                      : suppliers.length < 10)
+                  }
+                  onClick={() => setPage((n) => n + 1)}
+                >
+                  التالي
+                </button>
+              </div>
+            </Card>
+            <Card title="تنبيهات ذكية">
+              <div className="ca-alerts">
+                {rows(data.insights?.items).map((r, i) => (
+                  <div key={i}>
+                    <TriangleAlert size={22} />
+                    <div>
+                      <b>{r.title || "تنبيه"}</b>
+                      <p>{r.message || "—"}</p>
+                    </div>
+                  </div>
+                ))}
+                {!rows(data.insights?.items).length && <Empty />}
+              </div>
+              {rows(data.insights?.unavailable).map((r, i) => (
+                <p className="cm-api-muted" key={i}>
+                  {r.reason}
+                </p>
+              ))}
+            </Card>
+          </div>
+          <div className="ca-pair-grid">
+            <Card title="مقارنة شهرية">
+              <CategoryMonthly series={rows(data.monthlyComparison?.series)} />
+            </Card>
+            <Card title="توزيع أنواع القطع">
+              <Ring
+                label="قطعة مطلوبة"
+                items={rows(data.partsShare?.items).map((r) => ({
+                  label: r.label || r.partType,
+                  value: r.parts,
+                }))}
+              />
+            </Card>
+          </div>
+          <div className="ca-pair-grid">
+            <Card title="توزيع جودة القطع المطلوبة">
+              <Ring
+                label="طلب تسعير"
+                items={quality.map((r) => ({
+                  label: r.label || r.group,
+                  value: r.pricingRequests,
+                }))}
+              />
+              <Table
+                heads={["الجودة", "الطلبات", "العروض", "وسيط السعر"]}
+                rows={quality.map((r) => [
+                  r.label || r.group,
+                  count(r.ordersCount),
+                  count(r.quotesCount),
+                  r.medianPrice == null ? "—" : <Money value={r.medianPrice} />,
+                ])}
+              />
+            </Card>
+            <Card title="تفاصيل فئات القطع">
+              <Table
+                heads={[
+                  "الفئة",
+                  "الطلبات",
+                  "التسعيرات",
+                  "متوسط السعر",
+                  "صافي الإيراد",
+                ]}
+                rows={categories.map((r) => [
+                  r.nameAr || r.nameEn,
+                  count(r.ordersCount),
+                  count(r.pricingRequests),
+                  r.averagePrice == null ? (
+                    "—"
+                  ) : (
+                    <Money value={r.averagePrice} />
+                  ),
+                  r.netRevenue == null ? "—" : <Money value={r.netRevenue} />,
+                ])}
+              />
+            </Card>
+          </div>
+          <div className="ca-pair-grid">
+            <Card title="وقت الاستجابة للتسعير">
+              <Table
+                heads={["الشركة", "طلبات", "ردود", "متأخرة", "وسيط ساعات الرد"]}
+                rows={pricing.map((r) => [
+                  r.makeNameAr || r.makeNameEn,
+                  count(r.requests),
+                  count(r.responded),
+                  count(r.late),
+                  count(r.medianHoursToFirstResponse),
+                ])}
+              />
+            </Card>
+            <Card title="أكثر سنوات الصنع طلبًا">
+              <Bars
+                label="سنوات الصنع"
+                items={years.map((r) => ({
+                  label: r.year,
+                  value: r.pricingRequests,
+                }))}
+              />
+            </Card>
+          </div>
+          {data.dataQuality?.testData?.filtered === false && (
+            <p className="cm-api-muted">
+              التقرير قد يشمل بيانات الاختبار؛ الخادم لا يستبعدها.
+            </p>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
