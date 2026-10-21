@@ -11,7 +11,7 @@
 .pp-editor-services .pp-upload-panel .pp-editor-image{gap:0}.pp-editor-services .pp-upload-panel .pp-editor-image>.pp-remove{position:absolute;top:2px;left:2px;width:22px;height:22px}.pp-editor-services .pp-preview-image img{object-fit:cover}.pp-editor-services .pp-service-price-cities>.pp-field{min-width:0}.pp-editor-services .pp-preview-panel .pp-copy-link{white-space:nowrap}.pp-editor-services .pp-upload-panel .pp-thumb img{width:100%;height:100%;object-fit:cover}.pp-editor-services .pp-publishing>div[title]>.pp-toggle-row:first-child{border-bottom:1px solid #e1e8fb;padding-bottom:17px;margin-bottom:15px}.pp-editor-services .pp-publishing>div[title]>.pp-toggle-row:last-child{border:0;padding-bottom:0;margin-bottom:0}
 
 /* Keep the product thumbnail and text anchored to the same RTL column edge. */
-.pp-table th:nth-child(2):has(+ th),
+.pp-table:has(.pp-product-name) th:nth-child(2),
 .pp-table td:has(> .pp-product-name){text-align:right;padding-inline-start:16px}
 .pp-product-name{width:100%;margin:0;display:grid;grid-template-columns:39px minmax(0,1fr);align-items:center;gap:10px;text-align:right}
 .pp-product-name>img,.pp-product-name>svg{width:39px;height:39px;justify-self:center;flex-shrink:0}
