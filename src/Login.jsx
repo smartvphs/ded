@@ -1,5 +1,5 @@
 import React, {useState,useEffect,useRef} from 'react';
-import {EyeOff,ArrowLeft,ChevronRight,LoaderCircle,TriangleAlert} from 'lucide-react';
+import {EyeOff,Mail,ArrowLeft,ChevronRight,LoaderCircle,TriangleAlert} from 'lucide-react';
 import {requestLogin,verifyLogin,resendLoginCode,setAuthSession} from './auth-api';
 import {LoginArt,LoginHero} from './LoginArt';
 import './login.css';
@@ -99,7 +99,7 @@ export default function Login({onLogin}) {
               <span className="login-control"><LoginArt name="lock" className="login-field-icon"/><input type={visible?'text':'password'} name="password" autoComplete="current-password" aria-label="الرقم السري" placeholder="ادخل كلمة السر" value={password} onChange={event=>{setPassword(event.target.value);setFieldErrors(previous=>({...previous,password:''}));setError('');}} required disabled={busy} aria-invalid={Boolean(fieldErrors.password)} aria-describedby={fieldErrors.password?'password-error':undefined}/><button type="button" aria-label={visible?'إخفاء كلمة المرور':'إظهار كلمة المرور'} disabled={busy} onClick={()=>setVisible(!visible)}>{visible?<EyeOff size={20}/>:<LoginArt name="eye"/>}</button></span>
               {fieldErrors.password&&<span id="password-error" className="login-field-error" role="alert">{fieldErrors.password}</span>}
             </label>
-            <p className="login-channel-note">سيتم إرسال رمز التحقق الخاص بك عبر <span>البريد الإلكتروني</span></p>
+            <p className="login-channel-note">سيتم إرسال رمز التحقق الخاص بك عبر <span>البريد الإلكتروني<Mail size={15} aria-hidden="true"/></span></p>
             {error&&<p className="login-error" role="alert">{error}</p>}
           </>:<div className={'otp-digits '+(error?'otp-invalid':'')} role="group" aria-label="رمز التحقق" dir="ltr" onPaste={event=>{const pasted=normalizeCode(event.clipboardData.getData('text'));if(pasted){event.preventDefault();enterDigits(pasted,0);}}}>
             {digits.map((digit,index)=><input key={index} ref={element=>{digitRefs.current[index]=element;}} name={'otp-'+index} type="text" inputMode="numeric" autoComplete={index===0?'one-time-code':'off'} aria-label={'الرقم '+(index+1)+' من رمز التحقق'} value={digit} maxLength={6} disabled={busy} onChange={event=>enterDigits(event.target.value,index)} onFocus={event=>event.target.select()} onKeyDown={event=>{if(event.key==='Backspace'&&!digit&&index>0){event.preventDefault();setDigits(previous=>previous.map((value,i)=>i===index-1?'':value));digitRefs.current[index-1]?.focus();}if(event.key==='ArrowLeft'&&index>0){event.preventDefault();digitRefs.current[index-1]?.focus();}if(event.key==='ArrowRight'&&index<5){event.preventDefault();digitRefs.current[index+1]?.focus();}}}/>)}
