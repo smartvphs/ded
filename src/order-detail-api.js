@@ -3,6 +3,7 @@ export function orderDraft(row) {
     address = shipping.address || row.delivery_address || {};
   return {
     ...row,
+    contact: { ...(row.contact || row.customer || {}) },
     city: address.city ?? row.city ?? "",
     district: address.district ?? row.district ?? "",
     street: address.street ?? row.street ?? "",
@@ -73,4 +74,27 @@ export function orderItemQuantity(value) {
   if (!Number.isSafeInteger(quantity) || quantity < 1)
     throw new Error("أدخل كمية صحيحة أكبر من صفر.");
   return quantity;
+}
+
+export function paymentUpdateBody(draft, original) {
+  const body = {};
+  if (draft.payment_method !== original.payment_method)
+    body.paymentMethod = draft.payment_method;
+  if ((draft.coupon_code || "") !== (original.coupon_code || ""))
+    body.couponCode = draft.coupon_code?.trim() || null;
+  return body;
+}
+export function contactUpdateBody(draft, original) {
+  const old = original.contact || original.customer || {},
+    next = draft.contact || {};
+  const body = {};
+  for (const key of ["name", "phone", "email"]) {
+    if ((next[key] || "") !== (old[key] || ""))
+      body[
+        { name: "contactName", phone: "contactPhone", email: "contactEmail" }[
+          key
+        ]
+      ] = next[key]?.trim() || null;
+  }
+  return body;
 }

@@ -513,7 +513,7 @@ export default function OrdersPage({ returns = false, onSessionExpired }) {
                     </>
                   ) : (
                     <>
-                      <td>{row.customer_name || "—"}</td>
+                      <td>{row.contact_name || row.customer_name || "—"}</td>
                       <td>
                         {row.suppliers?.map((s) => s.name).join("، ") ||
                           "المنصة"}

@@ -48,6 +48,8 @@ import OrderCosts from "./OrderCosts";
 import {
   orderDraft,
   shippingBody,
+  paymentUpdateBody,
+  contactUpdateBody,
   orderItemQuantity,
 } from "./order-detail-api";
 const blank = {
@@ -519,17 +521,12 @@ export function OrderDetail({
     setDirty(true);
   };
   const items = data.items || [];
-  const subtotal = items.reduce((a, i) => a + Number(i.line_total || 0), 0);
-  const computed = {
-    ...data,
-    subtotal,
-    total:
-      subtotal +
-      Number(data.shipping_fee || 0) +
-      Number(data.tax || 0) -
-      Number(data.discount || 0),
-  };
-  const preview = dirty || create ? computed : data;
+  const preview = resource.data?.data || data;
+  const canEditPayment =
+    data.status === "pending" &&
+    data.order_type !== "service" &&
+    !Number(data.wallet_amount || 0) &&
+    !["paid", "captured", "refunded"].includes(data.payment_status);
   function updateItem(id, key, value) {
     changeData({
       ...data,
@@ -611,6 +608,22 @@ export function OrderDetail({
           completed = true;
         }
       }
+      const payment = paymentUpdateBody(data, original);
+      if (Object.keys(payment).length) {
+        await adminRequest(
+          `/api/orders/admin/${encodeURIComponent(id)}/payment`,
+          { method: "PATCH", body: payment },
+        );
+        completed = true;
+      }
+      const contact = contactUpdateBody(data, original);
+      if (Object.keys(contact).length) {
+        await adminRequest(
+          `/api/orders/admin/${encodeURIComponent(id)}/contact`,
+          { method: "PATCH", body: contact },
+        );
+        completed = true;
+      }
       if (Object.keys(shipping).length) {
         await adminRequest(
           `/api/orders/admin/${encodeURIComponent(id)}/shipping`,
@@ -674,7 +687,7 @@ export function OrderDetail({
                 onClick={() => {
                   if (create) onBack();
                   else {
-                    setData(resource.data?.data || blank);
+                    setData(orderDraft(resource.data?.data || blank));
                     setDirty(false);
                     setEditing(false);
                   }
@@ -925,13 +938,13 @@ export function OrderDetail({
                         ].map(([key, label, Icon]) => (
                           <Field key={key} label={label} icon={Icon}>
                             <input
-                              value={data.customer?.[key] || ""}
-                              readOnly
+                              value={data.contact?.[key] || ""}
+                              readOnly={busy || data.status === "cancelled"}
                               onChange={(e) =>
                                 changeData({
                                   ...data,
-                                  customer: {
-                                    ...data.customer,
+                                  contact: {
+                                    ...data.contact,
                                     [key]: e.target.value,
                                   },
                                 })
@@ -1005,7 +1018,7 @@ export function OrderDetail({
                         label="طريقة الدفع"
                         icon={FileText}
                         value={data.payment_method || "cash"}
-                        disabled
+                        disabled={busy || !canEditPayment}
                         onChange={(e) =>
                           changeData({
                             ...data,
@@ -1013,12 +1026,43 @@ export function OrderDetail({
                           })
                         }
                       >
-                        {Object.entries(payments).map(([key, label]) => (
-                          <option key={key} value={key}>
-                            {label}
-                          </option>
-                        ))}
+                        {Object.entries({
+                          ...payments,
+                          visa: "Visa",
+                          mastercard: "Mastercard",
+                        })
+                          .filter(
+                            ([key]) =>
+                              [
+                                "cash",
+                                "mada",
+                                "visa",
+                                "mastercard",
+                                "apple_pay",
+                                "tabby",
+                                "tamara",
+                              ].includes(key) || key === data.payment_method,
+                          )
+                          .map(([key, label]) => (
+                            <option key={key} value={key}>
+                              {label}
+                            </option>
+                          ))}
                       </Select>
+                      <Field label="كود الخصم" icon={Flame}>
+                        <input
+                          aria-label="كود خصم الطلب"
+                          value={data.coupon_code || ""}
+                          disabled={busy || !canEditPayment}
+                          onChange={(e) =>
+                            changeData({ ...data, coupon_code: e.target.value })
+                          }
+                        />
+                      </Field>
+                      <p className="op-caption">
+                        الخصم والإجمالي يحسبهما السيرفر بعد الحفظ. تعديل الدفع
+                        والكوبون متاح قبل تأكيد الطلب والدفع فقط.
+                      </p>
                       <Field label="الخصم" icon={Flame}>
                         <input
                           type="number"
@@ -1060,15 +1104,21 @@ export function OrderDetail({
                         </span>
                         <div>
                           <small>الاسم</small>
-                          <b>{data.customer?.name || "—"}</b>
+                          <b>
+                            {data.contact?.name || data.customer?.name || "—"}
+                          </b>
                         </div>
                       </div>
                       <div className="op-side-row">
                         <UserRound size={20} />
                         <div>
                           <small>تفاصيل التواصل</small>
-                          <p>{data.customer?.email || "—"}</p>
-                          <p dir="ltr">{data.customer?.phone || "—"}</p>
+                          <p>
+                            {data.contact?.email || data.customer?.email || "—"}
+                          </p>
+                          <p dir="ltr">
+                            {data.contact?.phone || data.customer?.phone || "—"}
+                          </p>
                         </div>
                       </div>
                       <button
