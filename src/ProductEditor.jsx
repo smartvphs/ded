@@ -33,7 +33,6 @@ import {
   productDraft,
   productBody,
   compatibilityBody,
-  qualityTierOptions,
 } from "./product-editor-model";
 import { readSpecification, writeSpecification } from "./product-catalog";
 import { catalogOptions } from "./catalog-options";
@@ -151,6 +150,8 @@ export default function ProductEditor({
       ? null
       : "/api/products/admin/" + encodeURIComponent(product.id),
   );
+  const qualityTiers = useAdminResource("/api/suppliers/quality-tiers");
+  const qualityTierOptions = (Array.isArray(qualityTiers.data?.data) ? qualityTiers.data.data : []).map((row) => ({id: row.code, name: row.name || row.name_ar || row.name_en || row.code}));
   const catalog = useAdminResource("/api/catalog-fields");
   const fields = catalog.data?.data;
   const categories = useAdminResource("/api/categories/admin"),
@@ -689,6 +690,7 @@ export default function ProductEditor({
                     </Panel>
                   )}
                   <Panel title="الجودات والأسعار" className="pp-qualities">
+                    <LookupMessage resource={qualityTiers} />
                     <div className="pp-quality-price">
                       <Choice
                         label="الجودة"

@@ -154,12 +154,3 @@ export function productBody(
   }
   return body;
 }
-
-export const qualityTierOptions = [
-  { id: "original", name: "قطعة أصلية" },
-  { id: "oem", name: "OEM" },
-  { id: "commercial", name: "تجاري" },
-  { id: "alternative", name: "بديل" },
-  { id: "used", name: "مستعمل" },
-  { id: "refurbished", name: "مجدد" },
-];

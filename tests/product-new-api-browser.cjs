@@ -471,6 +471,7 @@ const XLSX = require("xlsx");
         assert.ok(row, "Unknown product " + path);
         return send(r, { ...row, qualities, variants: row.variants || [] });
       }
+      if (path === "/api/suppliers/quality-tiers") return send(r, [{code:"original",name:"أصلي"},{code:"oem",name:"وكالة"},{code:"commercial",name:"تجاري"},{code:"japanese",name:"ياباني"}]);
       if (path === "/api/catalog-fields" && m === "GET") return send(r, []);
       throw new Error("Unexpected " + m + " " + path);
     });
@@ -609,6 +610,8 @@ const XLSX = require("xlsx");
     const other = p.locator("section").filter({
       has: p.getByRole("heading", { name: "الجودات الأخرى", exact: true }),
     });
+    assert.equal(await p.getByLabel("الجودة", {exact:true}).locator('option[value="japanese"]').textContent(), "ياباني");
+    assert.equal(await other.getByLabel("جودة إضافية", {exact:true}).locator('option[value="japanese"]').textContent(), "ياباني");
     await other.getByLabel("جودة إضافية", { exact: true }).selectOption("oem");
     await other.getByLabel("سعر البيع", { exact: true }).fill("80");
     await other.getByLabel("سعر التكلفة", { exact: true }).fill("50");

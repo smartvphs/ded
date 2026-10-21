@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from "react";
 import { Plus, Trash2, Star, Sparkles } from "lucide-react";
 import { Panel, Input, Money, Toggle } from "./products-ui";
 import { adminRequest, queryString } from "./admin-api";
-import { qualityTierOptions } from "./product-editor-model";
 import useAdminResource from "./use-admin-resource";
 export function State({ resource }) {
   return resource.error ? (
@@ -519,7 +518,8 @@ export function ProductPrices({
   useEffect(() => {
     setVersion((v) => v + 1);
   }, [partNumber]);
-  const tiers = qualityTierOptions.map((x) => ({ code: x.id, name: x.name }));
+  const qualityTiers = useAdminResource("/api/suppliers/quality-tiers");
+  const tiers = Array.isArray(qualityTiers.data?.data) ? qualityTiers.data.data : [];
   const qrows = Array.isArray(qualities.data?.data) ? qualities.data.data : [];
   const [packs, setPacks] = useState(variants);
   useEffect(() => setPacks(variants), [variants]);
@@ -614,6 +614,7 @@ export function ProductPrices({
   return (
     <>
       <Panel title="الجودات الأخرى" className="pp-qualities">
+        <State resource={qualityTiers} />
         <State resource={qualities} />
         <Feedback mutation={mutation} />
         {newBlocked && (
