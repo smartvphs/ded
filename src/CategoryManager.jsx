@@ -671,7 +671,8 @@ export default function CategoryManager({ category, onBack }) {
     <div
       className={
         "category-management " +
-        (["parts", "used"].includes(category) ? "cm-vehicle-management" : "")
+        (["parts", "used"].includes(category) ? "cm-vehicle-management" : "") +
+        (category === "used" ? " cm-used-management" : "")
       }
     >
       <div className="cm-page-heading">
@@ -681,7 +682,7 @@ export default function CategoryManager({ category, onBack }) {
           التصنيفات الرئيسية
         </button>
       </div>
-      {["parts", "used"].includes(category) && (
+      {category === "parts" && (
         <div className="cm-tabs">
           <button
             className={tab === "manage" ? "selected" : ""}

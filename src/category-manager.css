@@ -5,3 +5,6 @@
 @media(max-width:1200px){.cm-parts-layout{gap:16px}.cm-car{padding:12px}.cm-car-meta{font-size:10px;gap:8px}.cm-parts-layout .cm-section{padding:14px}.cm-row-label b{font-size:12px}.cm-row-actions{gap:5px}.cm-list-row{padding:12px 9px}.cm-row-actions>button{height:21px;width:21px}.cm-parts-sidebar .cm-row-actions{gap:4px}.cm-parts-sidebar .cm-row-actions>button{height:20px;width:20px}.cm-vehicle-management .cm-stat>span:last-child{font-size:10px}}
 @media(max-width:900px){.cm-parts-layout{grid-template-columns:1fr}.cm-parts-sidebar{order:2}.cm-vehicle-management .cm-stats{flex-wrap:wrap}.cm-vehicle-management .cm-stat{flex:1 1 25%}}
 @media(max-width:600px){.cm-vehicle-management .cm-tabs{padding:12px 10px 0;flex-wrap:wrap}.cm-vehicle-management .cm-tabs>button{font-size:10px}.cm-vehicle-management .cm-stats{padding:12px 10px;gap:9px}.cm-vehicle-management .cm-stat{flex:1 1 40%;height:125px}.cm-vehicle-management .cm-page-heading h1{font-size:14px}.cm-car-meta{font-size:10px}.cm-row-label b{font-size:13px}}
+
+/* Used parts has no management/analytics tabs in its reference. */
+.cm-used-management .cm-stats{border-radius:20px;padding:15px;margin-bottom:24px}
