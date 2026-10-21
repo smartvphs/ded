@@ -1,11 +1,12 @@
 import React from 'react';
-import {ChevronLeft, ChevronRight, Package} from 'lucide-react';
+import {ChevronLeft, ChevronRight} from 'lucide-react';
+import ProductPicture from './ProductPicture';
 export default function ProductGallery({images=[],selected,onSelect}) {
   const index=Math.max(0,images.indexOf(selected));
   const move=(step)=>onSelect(images[(index+step+images.length)%images.length]);
   return <div className="pp-preview-image pp-product-gallery" role="region" aria-label="صور المنتج"
     tabIndex={images.length>1?0:undefined} onKeyDown={event=>{if(images.length>1&&['ArrowLeft','ArrowRight'].includes(event.key)){event.preventDefault();move(event.key==='ArrowLeft'?1:-1)}}}>
-    {images.length ? <img src={images[index]} alt={`معاينة المنتج — صورة ${index+1} من ${images.length}`} /> : <Package size={72} />}
+    <ProductPicture src={images[index]} alt={images.length ? `معاينة المنتج — صورة ${index+1} من ${images.length}` : "صورة المنتج الافتراضية"} />
     {images.length>1&&<>
       <button type="button" className="pp-gallery-arrow pp-gallery-prev" aria-label="الصورة السابقة" onClick={()=>move(-1)}><ChevronRight size={20}/></button>
       <button type="button" className="pp-gallery-arrow pp-gallery-next" aria-label="الصورة التالية" onClick={()=>move(1)}><ChevronLeft size={20}/></button>

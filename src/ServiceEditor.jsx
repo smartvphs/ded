@@ -18,6 +18,7 @@ import {
   Package,
 } from "lucide-react";
 import { ProductReviews } from "./ProductExtras";
+import ProductPicture from "./ProductPicture";
 import { Panel, Input, Tags, Toggle, Field, Money } from "./products-ui";
 import { adminRequest } from "./admin-api";
 import useAdminResource from "./use-admin-resource";
@@ -574,11 +575,7 @@ export default function ServiceEditor({ id, onBack, onSaved }) {
               >
                 <div className="pp-preview-card">
                   <div className="pp-preview-image">
-                    {image ? (
-                      <img src={image} alt="معاينة الخدمة" />
-                    ) : (
-                      <ImageIcon size={64} />
-                    )}
+                    <ProductPicture src={image} alt="معاينة الخدمة" />
                   </div>
                   <h3>{draft.name || "اسم الخدمة"}</h3>
                   <p className="pp-preview-subtitle">

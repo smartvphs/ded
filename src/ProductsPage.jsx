@@ -12,11 +12,11 @@ import {
   CheckCircle2,
   TriangleAlert,
   Shuffle,
-  Package,
   Star,
   ChevronDown,
 } from "lucide-react";
 import ProductEditor from "./ProductEditor";
+import ProductPicture from "./ProductPicture";
 import ServiceProducts from "./ServiceProducts";
 import { exportProductPdf } from "./product-export";
 import { sections, filters } from "./products-data";
@@ -757,23 +757,7 @@ export default function ProductsPage({ onSessionExpired }) {
           {detail.data && (
             <>
               <h3>{detail.data.data.name}</h3>
-              {(typeof detail.data.data.images?.[0] === "string"
-                ? detail.data.data.images[0]
-                : detail.data.data.images?.[0]?.image_url) && (
-                <img
-                  src={
-                    typeof detail.data.data.images[0] === "string"
-                      ? detail.data.data.images[0]
-                      : detail.data.data.images[0].image_url
-                  }
-                  alt=""
-                  style={{
-                    maxWidth: "100%",
-                    maxHeight: 260,
-                    objectFit: "contain",
-                  }}
-                />
-              )}
+              <ProductPicture src={typeof detail.data.data.images?.[0] === "string" ? detail.data.data.images[0] : detail.data.data.images?.[0]?.image_url} alt="" style={{maxWidth:"100%",maxHeight:260,objectFit:"contain"}} />
               <p>{detail.data.data.description || ""}</p>
               <p>{detail.data.data.part_number || ""}</p>
               <Money>
@@ -814,18 +798,8 @@ export default function ProductsPage({ onSessionExpired }) {
   );
 }
 
-function ProductImage({ src, name }) {
-  const [failed, setFailed] = useState(false);
-  return src && !failed ? (
-    <img
-      src={src}
-      alt=""
-      onError={() => setFailed(true)}
-      style={{ width: 39, height: 39, objectFit: "contain" }}
-    />
-  ) : (
-    <Package size={30} aria-hidden="true" />
-  );
+function ProductImage({src}) {
+  return <ProductPicture src={src} alt="" style={{width:39,height:39,objectFit:"contain"}} />;
 }
 function ProductMakes({ row }) {
   return (

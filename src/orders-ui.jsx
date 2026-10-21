@@ -1,6 +1,7 @@
 import React,{useEffect,useRef,useState} from 'react';
 import {X,Package,ChevronDown,Search} from 'lucide-react';
 import {number} from './dashboard-data';
+import ProductPicture from './ProductPicture';
 export {Money,Empty,ResourceState} from './dashboard-ui';
 export const statusOptions=[['','كل الحالات'],['pending','جديد'],['confirmed','قيد التنفيذ'],['shipped','جاري الشحن'],['delivered','تم التوصيل'],['partial','مسترجع جزئي'],['full','مسترجع كامل'],['cancelled','ملغي']];
 export const returnStatuses={pending:'قيد المراجعة',approved:'موافق عليه',rejected:'مرفوض',processing:'جاري المعالجة',completed:'تم الاسترداد'};
@@ -11,7 +12,7 @@ export function Field({label,icon:Icon,children,className=''}){return <label cla
 export function Select({label,icon,children,...props}){return <Field label={label} icon={icon}><select aria-label={label} {...props}>{children}</select><ChevronDown size={16} className="op-select-arrow"/></Field>}
 export function Panel({title,children,className='',actions}){return <section className={'op-panel '+className}>{title&&<div className="op-panel-heading"><h2>{title}</h2>{actions}</div>}{children}</section>}
 export function Modal({title,onClose,children}){useEffect(()=>{const listener=e=>{if(e.key==='Escape')onClose()};document.addEventListener('keydown',listener);const before=document.body.style.overflow;document.body.style.overflow='hidden';return()=>{document.removeEventListener('keydown',listener);document.body.style.overflow=before}},[onClose]);return <div className="op-backdrop" onClick={onClose}><section className="op-modal" role="dialog" aria-modal="true" aria-label={title} onClick={e=>e.stopPropagation()}><button className="op-modal-close" aria-label="إغلاق" onClick={onClose}><X size={19}/></button><h2>{title}</h2>{children}</section></div>}
-export function ProductPhoto({src,name}){return src?<img className="op-product-photo" src={src} alt={name||''} onError={e=>{e.currentTarget.style.visibility='hidden'}}/>:<span className="op-product-photo op-photo-placeholder"><Package size={23}/></span>}
+export function ProductPhoto({src,name}){return <ProductPicture className="op-product-photo" src={src} alt={name||''}/>;}
 export function Pager({page,total,pageSize,onChange}){const pages=Math.max(1,Math.ceil((total||0)/pageSize));const shown=[...new Set([1,2,3,page,pages])].filter(n=>n<=pages).sort((a,b)=>a-b);return <div className="op-pager"><button disabled={page===1} onClick={()=>onChange(page-1)}>السابق</button>{shown.map((n,i)=><React.Fragment key={n}>{i>0&&n-shown[i-1]>1&&<span>…</span>}<button className={n===page?'active':''} onClick={()=>onChange(n)} aria-label={'صفحة '+n}>{n}</button></React.Fragment>)}<button disabled={page>=pages} onClick={()=>onChange(page+1)}>التالي</button></div>}
 export function SearchBox({value,onChange}){return <label className="op-search"><input aria-label="البحث في الطلبات" value={value} onChange={e=>onChange(e.target.value)} placeholder="البحث برقم الطلب، اسم العميل، ..."/><Search size={19}/></label>}
 export function Stats({items}){return <section className="op-panel op-stats" style={{'--op-stat-count':items.length}}>{items.map(({label,value,color,icon:Icon})=><div className={'op-stat '+color} key={label}><span className="op-stat-icon"><Icon size={21}/></span><b>{number(value)}</b><span>{label}</span></div>)}</section>}
