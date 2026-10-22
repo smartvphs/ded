@@ -34,7 +34,8 @@ const assert = require("node:assert/strict");
       deleteConflict = true,
       readOnly = false,
       denyList = false,
-      ignoreValue = false;
+      ignoreValue = false,
+      failMethods = false;
     const coupons = Array.from({ length: 7 }, (_, i) => ({
       id: "c" + i,
       code: "SAVE" + i,
@@ -61,6 +62,8 @@ const assert = require("node:assert/strict");
       startsAt: "starts_at",
       expiresAt: "expires_at",
       isActive: "is_active",
+      maxDiscount: "max_discount",
+      paymentMethods: "payment_methods",
     };
     await page.route(
       "https://car-parts-backend.vercel.app/**",
@@ -79,6 +82,22 @@ const assert = require("node:assert/strict");
           });
         if (method === "GET") reads.push(path + u.search);
         else writes.push({ path, method, body });
+        if (path === "/api/payments/methods") {
+          if (failMethods)
+            return send({ message: "تعذر تحميل وسائل الدفع" }, 503);
+          return send({
+            data: {
+              context: "order",
+              methods: [
+                { code: "mada", label: "مدى", enabled: true },
+                { code: "visa", label: "فيزا", enabled: true },
+                { code: "apple_pay", label: "Apple Pay", enabled: true },
+                { code: "stcpay", label: "STC Pay", enabled: true },
+                { code: "tabby", label: "تابي - قسّمها على 4", enabled: false },
+              ],
+            },
+          });
+        }
         if (path === "/api/admin/me")
           return send({
             data: {
@@ -181,15 +200,6 @@ const assert = require("node:assert/strict");
                 description: null,
               };
           for (const [key, val] of Object.entries(body)) {
-            assert(
-              ![
-                "maxDiscount",
-                "paymentMethods",
-                "description",
-                "max_discount",
-                "payment_methods",
-              ].includes(key),
-            );
             row[map[key] || key] = val;
           }
           row.id = id;
@@ -231,9 +241,6 @@ const assert = require("node:assert/strict");
           }
           if (method === "PATCH") {
             for (const [key, val] of Object.entries(body)) {
-              assert(
-                !["maxDiscount", "paymentMethods", "description"].includes(key),
-              );
               if (key === "value" && ignoreValue) continue;
               row[map[key] || key] = val;
             }
@@ -276,23 +283,13 @@ const assert = require("node:assert/strict");
     await page
       .getByRole("button", { name: "تعديل SAVE0", exact: true })
       .click();
-    assert(
-      (await page
-        .getByLabel("الوصف", { exact: true })
-        .getAttribute("readonly")) !== null,
-    );
-    assert(
-      (await page
-        .getByLabel("أقصى خصم", { exact: true })
-        .getAttribute("readonly")) !== null,
-    );
-    assert(
-      (
-        await page
-          .getByLabel("وسائل الدفع المسموحة", { exact: true })
-          .inputValue()
-      ).includes("مدى"),
-    );
+    assert(await page.getByLabel("الوصف", { exact: true }).isEditable());
+    assert(await page.getByLabel("أقصى خصم", { exact: true }).isEditable());
+    await page.getByLabel("الوصف", { exact: true }).fill("وصف جديد");
+    await page.getByLabel("أقصى خصم", { exact: true }).fill("75");
+    await page.getByLabel("وسيلة الدفع visa", { exact: true }).uncheck();
+    await page.getByLabel("وسيلة الدفع stcpay", { exact: true }).check();
+    await page.getByLabel("وسيلة الدفع tabby", { exact: true }).check();
     await page.getByLabel("قيمة الخصم", { exact: true }).fill("15");
     await page.getByLabel("حد الاستخدام", { exact: true }).fill("");
     await page
@@ -304,7 +301,13 @@ const assert = require("node:assert/strict");
     const patch = writes.find(
       (w) => w.path === "/api/coupons/c0" && w.method === "PATCH",
     );
-    assert.deepEqual(patch.body, { value: 15, maxUses: null });
+    assert.deepEqual(patch.body, {
+      value: 15,
+      maxUses: null,
+      description: "وصف جديد",
+      maxDiscount: 75,
+      paymentMethods: ["mada", "stcpay", "tabby"],
+    });
     assert.equal(coupons[0].expires_at, "2027-01-01T00:00:00.123Z");
     await page
       .getByRole("checkbox", { name: "تفعيل SAVE0", exact: true })
@@ -318,10 +321,35 @@ const assert = require("node:assert/strict");
     );
     assert.equal(coupons[0].is_active, false);
     await page
+      .getByRole("button", { name: "تعديل SAVE0", exact: true })
+      .click();
+    await page.getByLabel("الوصف", { exact: true }).fill("");
+    await page.getByLabel("أقصى خصم", { exact: true }).fill("");
+    await page.getByLabel("كل وسائل الدفع", { exact: true }).check();
+    await page
+      .getByRole("button", { name: "حفظ الكوبون", exact: true })
+      .click();
+    await page
+      .getByRole("heading", { name: "تعديل الكوبون", exact: true })
+      .waitFor({ state: "hidden" });
+    const clearPatch = writes
+      .filter((w) => w.path === "/api/coupons/c0" && w.method === "PATCH")
+      .at(-1);
+    assert.deepEqual(clearPatch.body, {
+      description: "",
+      maxDiscount: null,
+      paymentMethods: null,
+    });
+    await page
       .getByRole("button", { name: "إضافة كوبون", exact: true })
       .click();
     await page.getByLabel("كود الكوبون", { exact: true }).fill("NEW15");
     await page.getByLabel("قيمة الخصم", { exact: true }).fill("15");
+    await page.getByLabel("الوصف", { exact: true }).fill("عرض الجمعة");
+    await page.getByLabel("أقصى خصم", { exact: true }).fill("50");
+    await page.getByLabel("وسيلة الدفع mada", { exact: true }).check();
+    await page.getByLabel("وسيلة الدفع apple_pay", { exact: true }).check();
+    await page.getByLabel("وسيلة الدفع tabby", { exact: true }).check();
     await page
       .getByLabel("بداية الصلاحية", { exact: true })
       .fill("2026-11-01T00:00");
@@ -354,6 +382,12 @@ const assert = require("node:assert/strict");
         .length,
       postCount,
     );
+    assert.equal(coupons.find((c) => c.id === "created").max_discount, 50);
+    assert.deepEqual(coupons.find((c) => c.id === "created").payment_methods, [
+      "mada",
+      "apple_pay",
+      "tabby",
+    ]);
     assert.equal(
       coupons.find((c) => c.id === "created").starts_at,
       "2026-10-31T21:00:00.000Z",
@@ -480,7 +514,11 @@ const assert = require("node:assert/strict");
     );
     await page.getByRole("button", { name: "إغلاق", exact: true }).click();
     await page.setViewportSize({ width: 390, height: 844 });
-    await page.waitForFunction(()=>document.querySelector(".sidebar").getBoundingClientRect().x>=innerWidth-1);
+    await page.waitForFunction(
+      () =>
+        document.querySelector(".sidebar").getBoundingClientRect().x >=
+        innerWidth - 1,
+    );
     const sidebarBox = await page.locator(".sidebar").boundingBox();
     assert(
       sidebarBox.x >= 389,
@@ -509,9 +547,22 @@ const assert = require("node:assert/strict");
         exact: true,
       })
       .waitFor();
+    denyList = false;
+    failMethods = true;
+    await page.reload();
+    await page.getByText("تعذر تحميل وسائل الدفع", { exact: true }).waitFor();
+    assert(
+      await page
+        .getByLabel("وسيلة دفع الكوبونات", { exact: true })
+        .isDisabled(),
+    );
+    assert.equal(
+      await page.getByLabel("وسيلة دفع الكوبونات").locator("option").count(),
+      1,
+    );
     assert.deepEqual(errors, []);
     console.log(
-      "Coupons browser PASS: backend filters/paging/metrics, clipboard, partial edit preserving timestamps/readonly unsupported fields, status, create/duplicate/delete readback retry without repeated write, 409 and uncertain POST, ignored save detection, usage report, read-only/403, mobile/no JS errors.",
+      "Coupons browser PASS: backend filters/paging/metrics, clipboard, dynamic payment methods/availability/error, editable cap/description, partial edit and clear preserving timestamps, status, create/duplicate/delete readback retry without repeated write, 409 and uncertain POST, ignored save detection, usage report, read-only/403, mobile/no JS errors.",
     );
   } finally {
     await browser.close();

@@ -16,11 +16,7 @@ import {
 import useAdminResource from "./use-admin-resource";
 import { ResourceState, Money } from "./orders-ui";
 import { number } from "./dashboard-data";
-import {
-  couponListPath,
-  couponStates,
-  couponPaymentMethods,
-} from "./coupons-api";
+import { couponListPath, couponStates, couponMethods } from "./coupons-api";
 import { cartDate } from "./abandoned-carts-api";
 import { CouponForm, CouponAction } from "./CouponForms";
 import CouponUsage from "./CouponUsage";
@@ -41,6 +37,7 @@ export default function Coupons({ onSessionExpired }) {
       revision,
     ),
     me = useAdminResource("/api/admin/me"),
+    paymentResource = useAdminResource("/api/payments/methods"),
     account = me.data?.data,
     canManage =
       account?.isSuperAdmin === true ||
@@ -60,6 +57,19 @@ export default function Coupons({ onSessionExpired }) {
     metrics = resource.data?.meta?.metrics,
     total = resource.data?.meta?.total,
     pages = Math.max(1, Math.ceil(Number(total || 0) / 3));
+  let methods = [],
+    methodError = null;
+  if (paymentResource.data) {
+    try {
+      methods = couponMethods(paymentResource.data);
+    } catch (e) {
+      methodError = e;
+    }
+  }
+  const methodsResource = methodError
+      ? { ...paymentResource, error: methodError }
+      : paymentResource,
+    paymentLabels = Object.fromEntries(methods.map((m) => [m.code, m.label]));
   useEffect(() => {
     const timer = setTimeout(() => {
       setQuery(search.trim());
@@ -113,6 +123,7 @@ export default function Coupons({ onSessionExpired }) {
         </div>
       )}
       <ResourceState resource={me} onLogin={onSessionExpired} />
+      <ResourceState resource={methodsResource} onLogin={onSessionExpired} />
       {report ? (
         <CouponUsage
           onBack={() => setReport(false)}
@@ -218,6 +229,7 @@ export default function Coupons({ onSessionExpired }) {
               </select>
               <select
                 aria-label="وسيلة دفع الكوبونات"
+                disabled={methodsResource.loading || !!methodsResource.error}
                 value={paymentMethod}
                 onChange={(e) => {
                   setPaymentMethod(e.target.value);
@@ -225,7 +237,7 @@ export default function Coupons({ onSessionExpired }) {
                 }}
               >
                 <option value="">جميع وسائل الدفع</option>
-                {Object.entries(couponPaymentMethods).map(([value, label]) => (
+                {methods.map(({ code: value, label }) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
@@ -267,7 +279,7 @@ export default function Coupons({ onSessionExpired }) {
                         c.payment_methods.length ? (
                           c.payment_methods.map((method) => (
                             <span key={method}>
-                              {couponPaymentMethods[method] || method}
+                              {paymentLabels[method] || method}
                             </span>
                           ))
                         ) : (
@@ -428,6 +440,9 @@ export default function Coupons({ onSessionExpired }) {
         <CouponForm
           coupon={modal.coupon}
           duplicate={modal.type === "duplicate"}
+          methods={methods}
+          methodsResource={methodsResource}
+          onSessionExpired={onSessionExpired}
           onClose={() => setModal(null)}
           onSaved={saved}
         />

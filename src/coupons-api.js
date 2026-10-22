@@ -7,15 +7,28 @@ export const couponStates = {
   exhausted: "نفد عدد الاستخدامات",
   inactive: "متوقف",
 };
-export const couponPaymentMethods = {
-  cash: "نقدي",
-  mada: "مدى",
-  visa: "فيزا",
-  mastercard: "ماستركارد",
-  apple_pay: "Apple Pay",
-  tabby: "تابي",
-  tamara: "تمارا",
-};
+export function couponMethods(payload) {
+  const methods = payload?.data?.methods;
+  if (
+    !Array.isArray(methods) ||
+    methods.some(
+      (m) =>
+        !m ||
+        typeof m.code !== "string" ||
+        !m.code ||
+        typeof m.label !== "string",
+    ) ||
+    new Set(methods.map((m) => m.code)).size !== methods.length
+  )
+    throw new Error("رد وسائل الدفع غير صالح.");
+  return methods;
+}
+const sameMethods = (a, b) =>
+  (a == null && b == null) ||
+  (Array.isArray(a) &&
+    Array.isArray(b) &&
+    new Set(a).size === new Set(b).size &&
+    a.every((code) => b.includes(code)));
 export function couponLocalTime(value) {
   if (!value || Number.isNaN(Date.parse(value))) return "";
   const p = Object.fromEntries(
@@ -57,6 +70,10 @@ export function couponDraft(row) {
     startsAt: couponLocalTime(row?.starts_at),
     expiresAt: couponLocalTime(row?.expires_at),
     isActive: row?.is_active ?? true,
+    maxDiscount: row?.max_discount ?? "",
+    paymentMethods:
+      row?.payment_methods == null ? null : [...row.payment_methods],
+    description: row?.description ?? "",
   };
 }
 function amount(
@@ -84,7 +101,7 @@ function amount(
     );
   return n;
 }
-export function couponBody(draft, original) {
+export function couponBody(draft, original, methods) {
   const code = draft.code.trim();
   if (!code) throw new Error("أدخل كود الكوبون.");
   if (!["percentage", "fixed"].includes(draft.discountType))
@@ -92,8 +109,30 @@ export function couponBody(draft, original) {
   const value = amount(draft.value, "قيمة الخصم");
   if (draft.discountType === "percentage" && value > 100)
     throw new Error("نسبة الخصم لا تتجاوز 100%.");
+  const paymentMethods =
+    draft.paymentMethods == null ? null : [...new Set(draft.paymentMethods)];
+  if (
+    paymentMethods &&
+    (!paymentMethods.length ||
+      paymentMethods.some(
+        (code) =>
+          typeof code !== "string" ||
+          (methods &&
+            !methods.some((m) => m.code === code) &&
+            !original?.payment_methods?.includes(code)),
+      ))
+  )
+    throw new Error("اختر وسائل دفع صحيحة من القائمة.");
+  if (typeof draft.description !== "string")
+    throw new Error("أدخل وصفًا صحيحًا للكوبون.");
   const body = {
     code,
+    maxDiscount: amount(draft.maxDiscount, "أقصى خصم", {
+      nullable: true,
+      zero: true,
+    }),
+    paymentMethods,
+    description: draft.description,
     discountType: draft.discountType,
     value,
     maxUses: amount(draft.maxUses, "حد الاستخدام", {
@@ -121,6 +160,10 @@ export function couponBody(draft, original) {
   const old = couponDraft(original),
     oldBody = {
       code: old.code.trim(),
+      maxDiscount:
+        original.max_discount == null ? null : Number(original.max_discount),
+      paymentMethods: original.payment_methods ?? null,
+      description: original.description ?? "",
       discountType: old.discountType,
       value: Number(old.value),
       maxUses: original.max_uses == null ? null : Number(original.max_uses),
@@ -134,9 +177,11 @@ export function couponBody(draft, original) {
     };
   return Object.fromEntries(
     Object.entries(body).filter(([key, value]) =>
-      key === "startsAt" || key === "expiresAt"
-        ? draft[key] !== old[key]
-        : value !== oldBody[key],
+      key === "paymentMethods"
+        ? !sameMethods(value, oldBody.paymentMethods)
+        : key === "startsAt" || key === "expiresAt"
+          ? draft[key] !== old[key]
+          : value !== oldBody[key],
     ),
   );
 }
@@ -149,21 +194,34 @@ const savedFields = {
   startsAt: "starts_at",
   expiresAt: "expires_at",
   isActive: "is_active",
+  maxDiscount: "max_discount",
+  paymentMethods: "payment_methods",
+  description: "description",
 };
 export function verifyCoupon(row, expected) {
   if (!row)
     throw new Error("الكوبون لم يظهر في البيانات المحفوظة. حدّث القائمة.");
   for (const [key, value] of Object.entries(expected)) {
+    if (
+      ["maxDiscount", "paymentMethods", "description"].includes(key) &&
+      !Object.hasOwn(row, savedFields[key])
+    )
+      throw new Error("رد الكوبون لم يرجع إعدادات الخصم والدفع للتأكيد.");
     const actual = row[savedFields[key]];
-    const matches = ["startsAt", "expiresAt"].includes(key)
-      ? value == null
-        ? actual == null
-        : Date.parse(actual) === Date.parse(value)
-      : ["value", "maxUses", "minOrderValue"].includes(key)
-        ? value == null
-          ? actual == null
-          : actual != null && Number(actual) === value
-        : actual === value;
+    const matches =
+      key === "paymentMethods"
+        ? sameMethods(actual, value)
+        : key === "description"
+          ? (actual ?? "") === value
+          : ["startsAt", "expiresAt"].includes(key)
+            ? value == null
+              ? actual == null
+              : Date.parse(actual) === Date.parse(value)
+            : ["value", "maxUses", "minOrderValue", "maxDiscount"].includes(key)
+              ? value == null
+                ? actual == null
+                : actual != null && Number(actual) === value
+              : actual === value;
     if (!matches)
       throw new Error(
         "بعض بيانات الكوبون لم ترجع بالقيم المحفوظة. حدّث البيانات قبل المحاولة من جديد.",

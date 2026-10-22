@@ -14,6 +14,7 @@ const {
   verifyCoupon,
   readCoupon,
   couponListPath,
+  couponMethods,
 } = await import(
   "data:text/javascript;base64," + Buffer.from(source).toString("base64")
 );
@@ -39,13 +40,18 @@ test("coupon edit sends changed documented fields only and preserves precise ori
       {
         ...draft,
         value: "15",
-        description: "unsupported",
+        description: "وصف جديد",
         maxDiscount: 99,
         paymentMethods: ["visa"],
       },
       row,
     ),
-    { value: 15 },
+    {
+      value: 15,
+      description: "وصف جديد",
+      maxDiscount: 99,
+      paymentMethods: ["visa"],
+    },
   );
   assert.deepEqual(
     couponBody(
@@ -113,4 +119,62 @@ test("coupon list sends backend filters and readback follows pages instead of a 
   assert(paths.every((p) => p.startsWith("/api/coupons?")));
   globalThis.couponRequest = async () => ({ data: [], meta: { total: 0 } });
   assert.equal(await readCoupon("missing", "MISSING"), null);
+});
+
+test("official payment choices preserve availability and partial updates compare method sets", () => {
+  const methods = couponMethods({
+    data: {
+      methods: [
+        { code: "mada", label: "مدى", enabled: true },
+        { code: "stcpay", label: "STC Pay", enabled: true },
+        { code: "tabby", label: "تابي", enabled: false },
+      ],
+    },
+  });
+  assert.equal(methods[2].enabled, false);
+  assert.throws(() => couponMethods({ data: { methods: [{ code: "mada" }] } }));
+  const original = { ...row, payment_methods: ["mada", "stcpay"] };
+  assert.deepEqual(
+    couponBody(
+      { ...couponDraft(original), paymentMethods: ["stcpay", "mada"] },
+      original,
+      methods,
+    ),
+    {},
+  );
+  assert.deepEqual(
+    couponBody(
+      {
+        ...couponDraft(row),
+        maxDiscount: "75",
+        description: "",
+        paymentMethods: ["mada", "tabby"],
+      },
+      row,
+      methods,
+    ),
+    { maxDiscount: 75, paymentMethods: ["mada", "tabby"], description: "" },
+  );
+  assert.deepEqual(
+    couponBody(
+      { ...couponDraft(row), maxDiscount: "", paymentMethods: null },
+      row,
+      methods,
+    ),
+    { maxDiscount: null, paymentMethods: null },
+  );
+  assert.throws(() =>
+    couponBody({ ...couponDraft(row), paymentMethods: ["fake"] }, row, methods),
+  );
+  verifyCoupon(
+    {
+      ...row,
+      payment_methods: ["tabby", "mada"],
+      description: null,
+      max_discount: "75.00",
+    },
+    { paymentMethods: ["mada", "tabby"], description: "", maxDiscount: 75 },
+  );
+  assert.throws(() => verifyCoupon(row, { maxDiscount: 75 }));
+  assert.throws(() => verifyCoupon(row, { paymentMethods: null }));
 });

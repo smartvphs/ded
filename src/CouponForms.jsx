@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { PricingDialog } from "./pricing-ui";
 import { adminRequest } from "./admin-api";
+import { ResourceState } from "./orders-ui";
 import { useMutation, Feedback } from "./ProductExtras";
 import {
   couponDraft,
@@ -8,7 +9,6 @@ import {
   couponPath,
   readCoupon,
   verifyCoupon,
-  couponPaymentMethods,
 } from "./coupons-api";
 function Field({ label, value, onChange, type = "text", ...props }) {
   return (
@@ -23,7 +23,15 @@ function Field({ label, value, onChange, type = "text", ...props }) {
     </label>
   );
 }
-export function CouponForm({ coupon, duplicate = false, onClose, onSaved }) {
+export function CouponForm({
+  coupon,
+  duplicate = false,
+  onClose,
+  onSaved,
+  methods = [],
+  methodsResource,
+  onSessionExpired,
+}) {
   const [draft, setDraft] = useState(() => ({
       ...couponDraft(coupon),
       ...(duplicate ? { code: "" } : {}),
@@ -45,7 +53,7 @@ export function CouponForm({ coupon, duplicate = false, onClose, onSaved }) {
           if (draft.code.trim() === coupon.code)
             throw new Error("كود النسخة لازم يختلف عن الكوبون الأصلي.");
           body = { code: draft.code.trim(), isActive: !!draft.isActive };
-        } else body = couponBody(draft, coupon);
+        } else body = couponBody(draft, coupon, methods);
         if (!Object.keys(body).length) throw new Error("مفيش تغييرات للحفظ.");
         let response;
         try {
@@ -85,6 +93,10 @@ export function CouponForm({ coupon, duplicate = false, onClose, onSaved }) {
               : Number(coupon.min_order_value),
           startsAt: coupon.starts_at ?? null,
           expiresAt: coupon.expires_at ?? null,
+          maxDiscount:
+            coupon.max_discount == null ? null : Number(coupon.max_discount),
+          paymentMethods: coupon.payment_methods ?? null,
+          description: coupon.description ?? "",
         });
         if (Number(row.used_count) !== 0)
           throw new Error("عداد استخدام النسخة الجديدة لم يرجع بصفر.");
@@ -182,35 +194,90 @@ export function CouponForm({ coupon, duplicate = false, onClose, onSaved }) {
             </div>
           )}
           {!duplicate && (
-            <div className="coupon-unconfirmed-fields">
-              <p className="coupon-api-note">
-                الوصف وأقصى خصم ووسائل الدفع للعرض فقط حاليًا.
-              </p>
+            <div className="coupon-settings-fields">
               <label className="coupon-field">
                 <span>الوصف</span>
                 <textarea
                   aria-label="الوصف"
-                  value={coupon?.description || ""}
-                  readOnly
-                  placeholder="غير متاح حاليًا"
+                  value={draft.description}
+                  onChange={(e) => set("description", e.target.value)}
+                  placeholder="وصف الكوبون (اختياري)"
                 />
               </label>
-              <div className="coupon-form-grid">
-                <Field
-                  label="أقصى خصم"
-                  value={coupon?.max_discount ?? ""}
-                  readOnly
-                  placeholder="غير محدد"
+              <Field
+                label="أقصى خصم"
+                aria-label="أقصى خصم"
+                type="number"
+                min="0"
+                step="0.01"
+                value={draft.maxDiscount}
+                onChange={(v) => set("maxDiscount", v)}
+                placeholder="بدون حد أقصى"
+              />
+              <div className="coupon-methods">
+                <h3>وسائل الدفع المسموحة</h3>
+                <p className="coupon-api-note">
+                  اختار وسيلة أو أكتر، أو «كل وسائل الدفع» لإلغاء التقييد.
+                </p>
+                <ResourceState
+                  resource={methodsResource}
+                  onLogin={onSessionExpired}
                 />
-                <Field
-                  label="وسائل الدفع المسموحة"
-                  value={
-                    coupon?.payment_methods
-                      ?.map((m) => couponPaymentMethods[m] || m)
-                      .join("، ") || "جميع الوسائل"
-                  }
-                  readOnly
-                />
+                <label>
+                  <input
+                    type="checkbox"
+                    aria-label="كل وسائل الدفع"
+                    checked={draft.paymentMethods === null}
+                    disabled={
+                      methodsResource.loading || !!methodsResource.error
+                    }
+                    onChange={(e) =>
+                      set(
+                        "paymentMethods",
+                        e.target.checked
+                          ? null
+                          : methods.length
+                            ? [methods[0].code]
+                            : null,
+                      )
+                    }
+                  />
+                  كل وسائل الدفع
+                </label>
+                <div className="coupon-methods-grid">
+                  {[
+                    ...methods,
+                    ...(draft.paymentMethods || [])
+                      .filter((code) => !methods.some((m) => m.code === code))
+                      .map((code) => ({ code, label: code, saved: true })),
+                  ].map((method) => (
+                    <label key={method.code}>
+                      <input
+                        type="checkbox"
+                        aria-label={"وسيلة الدفع " + method.code}
+                        checked={
+                          draft.paymentMethods?.includes(method.code) || false
+                        }
+                        disabled={
+                          methodsResource.loading || !!methodsResource.error
+                        }
+                        onChange={(e) => {
+                          const next = e.target.checked
+                            ? [...(draft.paymentMethods || []), method.code]
+                            : (draft.paymentMethods || []).filter(
+                                (code) => code !== method.code,
+                              );
+                          set("paymentMethods", next.length ? next : null);
+                        }}
+                      />
+                      {method.label}
+                      {method.enabled === false && (
+                        <small>غير مفعلة حاليًا</small>
+                      )}
+                      {method.saved && <small>محفوظة على الكوبون</small>}
+                    </label>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -242,7 +309,16 @@ export function CouponForm({ coupon, duplicate = false, onClose, onSaved }) {
             تم إرسال الحفظ؛ إعادة المحاولة هتأكد البيانات بدون إنشاء نسخة تانية.
           </p>
         )}
-        <button className="coupon-save" disabled={mutation.busy || uncertain}>
+        <button
+          className="coupon-save"
+          disabled={
+            mutation.busy ||
+            uncertain ||
+            (!coupon &&
+              !duplicate &&
+              (methodsResource.loading || !!methodsResource.error))
+          }
+        >
           {record ? "تأكيد البيانات" : "حفظ الكوبون"}
         </button>
       </form>
