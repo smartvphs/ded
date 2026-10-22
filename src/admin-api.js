@@ -4,16 +4,20 @@ export class ApiError extends Error {
   constructor(message, status) { super(message); this.status = status; }
 }
 
-async function send(path, {method = 'GET', body, signal, token} = {}) {
+async function send(path, {method = 'GET', body, signal, token, responseType} = {}) {
   const timeout = new AbortController();
   const timer = setTimeout(() => timeout.abort(), 20000);
   try {
     const response = await fetch(API_BASE_URL + path, {
       method, credentials: 'omit',
-      headers: {Accept: 'application/json', ...(body ? {'Content-Type': 'application/json'} : {}), ...(token ? {Authorization: `Bearer ${token}`} : {})},
+      headers: {Accept: responseType === 'csv' ? 'text/csv' : 'application/json', ...(body ? {'Content-Type': 'application/json'} : {}), ...(token ? {Authorization: `Bearer ${token}`} : {})},
       ...(body ? {body: JSON.stringify(body)} : {}),
       signal: signal ? AbortSignal.any([signal, timeout.signal]) : timeout.signal,
     });
+    if (response.ok && responseType === 'csv') {
+      if (!response.headers.get('content-type')?.toLowerCase().includes('text/csv')) throw new ApiError('الخادم لم يرجع ملف CSV صالحًا.', response.status);
+      return await response.blob();
+    }
     let payload;
     try { payload = await response.json(); } catch { throw new ApiError('رد الخادم غير متوقع. حاول مرة أخرى.', response.status); }
     if (!payload || typeof payload !== 'object') throw new ApiError('رد الخادم غير متوقع. حاول مرة أخرى.', response.status);

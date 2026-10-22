@@ -494,6 +494,7 @@ export function OrderDetail({
   create = false,
   initialTab = "details",
   onBack,
+  backLabel="الطلبات",
   onSessionExpired,
 }) {
   const resource = useAdminResource(
@@ -717,7 +718,7 @@ export function OrderDetail({
           )}
           <button className="op-text" onClick={onBack}>
             <ArrowRight size={16} />
-            الطلبات
+            {backLabel}
           </button>
         </div>
       </div>

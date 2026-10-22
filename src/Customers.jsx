@@ -1,13 +1,597 @@
-import RiyalIcon from './RiyalIcon';
-import React,{useState}from'react';import{Plus,Search,MoreVertical,Eye,Edit3,Trash2,UserX,ShieldX,X,ChevronDown,ChevronUp,Car,Home,Wallet,FileText,Package,Coins,ShoppingBag,ArrowRight,Users}from'lucide-react';import './customers.css';
-const names=['محمد أحمد','محمد مشهور','علي سالم','نور مصطفى','مختار الشامي','فاطمة الزهراء'];const initial=Array.from({length:18},(_,i)=>({id:i+1,name:names[i%6],phone:'+96685445541',email:'client'+(i+1)+'@example.com',address:'الرياض، شارع الملك، المملكة العربية السعودية',notes:'',active:i%6<3||i%6===5,isNew:i===1,blocked:false,balance:0,cashback:{minimum:150,percent:20,maximum:1500},orders:[34,30,28,2,18,25][i%6],quotes:[89,62,41,28,41,41][i%6],cartCount:(i%6+1)*5}));
-function Money({value}){return <span className="currency-amount"><RiyalIcon />{Number(value).toLocaleString('en-US',{maximumFractionDigits:2})}</span>}
-function Modal({title,onClose,children}){return <div className="modal-backdrop" onClick={onClose}><div className="customer-modal" role="dialog" aria-modal="true" aria-label={title} onClick={e=>e.stopPropagation()}><button className="pricing-modal-close" aria-label="إغلاق" onClick={onClose}><X size={18}/></button><h2>{title}</h2>{children}</div></div>}
-function Input({label,value,setValue,type='text',required=false}){return <label className="customer-field"><span>{label}{required?' *':''}</span><input type={type} min={type==='number'?0:undefined} step={type==='number'?'0.01':undefined} value={value} onChange={e=>setValue(e.target.value)} required={required}/></label>}
-function ClientForm({client,onClose,onSave}){const[form,setForm]=useState(client||{name:'',email:'',phone:'',address:'',notes:'',image:null}),[error,setError]=useState('');const set=(key,value)=>setForm({...form,[key]:value});return <Modal title={client?'تعديل العميل':'إضافة عميل جديد'} onClose={onClose}><form onSubmit={e=>{e.preventDefault();if(!form.name.trim()||!form.phone.trim())return setError('أدخل اسم العميل ورقم الجوال');onSave(form)}}><Input label="الاسم الكامل" value={form.name} setValue={v=>set('name',v)} required/><div className="customer-form-grid"><Input label="البريد الإلكتروني" type="email" value={form.email} setValue={v=>set('email',v)} required/><Input label="رقم الجوال" type="tel" value={form.phone} setValue={v=>set('phone',v)} required/></div><Input label="العنوان" value={form.address} setValue={v=>set('address',v)} required/><label className="customer-field"><span>الصورة الشخصية</span><input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>{const file=e.target.files[0];e.target.value='';if(!file)return;if(!['image/png','image/jpeg','image/webp'].includes(file.type)||file.size>3*1024*1024)return setError('اختر صورة أصغر من 3 ميجابايت');const reader=new FileReader();reader.onload=()=>set('image',reader.result);reader.readAsDataURL(file)}}/>{form.image&&<img className="customer-image-preview" src={form.image} alt="الصورة الشخصية"/>}</label><label className="customer-field"><span>ملاحظات</span><textarea value={form.notes} onChange={e=>set('notes',e.target.value)} placeholder="ملاحظات إضافية عن العميل، شروط خاصة أو معلومات مهمة..."/></label>{error&&<p className="form-error" role="alert">{error}</p>}<button className="cm-submit" type="submit"><Plus size={17}/>{client?'حفظ التعديلات':'إضافة عميل جديد'}</button></form></Modal>}
-function BalanceForm({onClose,onSave}){const[value,setValue]=useState('');return <Modal title="إضافة رصيد للعميل" onClose={onClose}><form onSubmit={e=>{e.preventDefault();if(Number(value)>0)onSave(Number(value))}}><Input label="قيمة الرصيد" type="number" value={value} setValue={setValue} required/><button className="cm-submit" type="submit"><Plus size={16}/>إضافة الرصيد</button></form></Modal>}
-function CashbackForm({value,onClose,onSave}){const[form,setForm]=useState(value),[error,setError]=useState('');return <Modal title="نسبة كاش باك" onClose={onClose}><form onSubmit={e=>{e.preventDefault();if(Number(form.percent)<0||Number(form.percent)>100)return setError('النسبة يجب أن تكون بين 0 و100');onSave(form)}}><div className="customer-form-grid"><Input label="حد أدنى الطلب" type="number" value={form.minimum} setValue={v=>setForm({...form,minimum:v})} required/><Input label="نسبة الكاش باك" type="number" value={form.percent} setValue={v=>setForm({...form,percent:v})} required/></div><Input label="حد أعلى الكاش باك" type="number" value={form.maximum} setValue={v=>setForm({...form,maximum:v})} required/>{error&&<p className="form-error">{error}</p>}<button className="cm-submit" type="submit">تأكيد</button></form></Modal>}
-function Avatar({client}){return client.image?<img className="customer-avatar" src={client.image} alt={client.name}/>:<span className="customer-avatar">{client.name[0]}</span>}
-function CustomerDetails({client,onBack,onEdit,onBalance,onCashback,onUpdate}){const[open,setOpen]=useState(0),[quoteTab,setQuoteTab]=useState('requests'),[orderType,setOrderType]=useState('all'),[vehicleModal,setVehicleModal]=useState(false),[vehicle,setVehicle]=useState({name:'',vin:'',year:'2025'}),[vehicles,setVehicles]=useState(client.vehicles||[{name:'تويوتا كامري 2025',vin:'1HG4ACKT35059475',year:'2025'},{name:'تويوتا كامري 2025',vin:'1HG4ACKT35059475',year:'2025'}]),[message,setMessage]=useState('');const notify=text=>{setMessage(text);setTimeout(()=>setMessage(''),3500)};return <div className="customer-details"><div className="pricing-heading"><h1>تفاصيل العميل</h1><button className="pricing-back" onClick={onBack}><ArrowRight size={16}/>إدارة العملاء</button></div><section className="customer-profile-card"><div className="customer-profile-top"><div className="customer-profile-person"><Avatar client={client}/><div><b>{client.name}</b><span className={'pricing-badge '+(client.active?'green':'red')}><i/>{client.active?'نشط':'غير نشط'}</span><small dir="ltr">{client.phone}</small></div></div><div className="customer-profile-buttons"><button className="pricing-primary" onClick={onBalance}><Plus size={14}/>إضافة رصيد للعميل</button><button className="pricing-primary" onClick={onCashback}><Plus size={14}/>نسبة كاش باك</button><button className="customer-edit-button" onClick={onEdit}><Edit3 size={13}/>تعديل</button></div></div><div className="customer-detail-stats">{[[50200,'إجمالي المشتريات','blue',Wallet],[client.orders,'إجمالي الطلبات','purple',FileText],[10,'طلبات تسعير','red',Coins],[50,'تسعيرات مؤكدة','green',Coins]].map(([v,label,color,I])=><div className={color} key={label}><span className="stat-icon"><I size={18}/></span><span><small>{label}</small><b>{label==='إجمالي المشتريات'?<Money value={v}/>:v}</b></span></div>)}</div>{client.balance>0&&<p className="customer-balance">رصيد العميل: <Money value={client.balance}/></p>}</section><div className="customer-orders-layout"><section className="customer-panel"><div className="customer-panel-title"><h2>آخر الطلبات</h2><select aria-label="نوع طلبات العميل" value={orderType} onChange={e=>setOrderType(e.target.value)}><option value="all">الطلبات العادية</option><option value="complete">الطلبات المكتملة</option></select></div>{[0,1].filter(i=>orderType==='all'||i===0).map(i=><article className="customer-order" key={i}><button className="customer-order-heading" onClick={()=>setOpen(open===i?null:i)}><span className="meta-icon"><ShoppingBag size={19}/></span><span><b>طلب #Parts-0512</b><small>تاريخ الطلب: منذ يومين · عدد القطع: 02</small></span>{open===i?<ChevronUp size={15}/>:<ChevronDown size={15}/>}</button>{open===i&&<div className="customer-order-products">{[0,1].map(j=><div key={j}><span>🛞</span><div><b>رايت ستاف قرص فرامل مثقوب ومشقّق</b><small>رقم القطعة: 547688</small><Money value={154.89}/></div></div>)}</div>}</article>)}</section><section className="customer-panel customer-carts"><div className="customer-panel-title"><h2>السلة المتروكة: <span>5</span></h2><button onClick={()=>notify('تمت محاكاة إرسال التنبيه في المعاينة')}>إرسال تنبيه</button></div>{Array.from({length:4},(_,i)=><div className="customer-cart-item" key={i}><b>🛒 قرص فرامل خلفي BMW</b><span>BMW 320i · الكمية: 2</span><strong><Money value={880}/></strong></div>)}</section></div><section className="customer-panel"><h2>التسعيرات</h2><div className="customer-quote-tabs">{[['requests','طلبات التسعير',50],['priced','تم تسعيرها',5],['confirmed','طلبات مؤكدة',10]].map(([key,label,n])=><button className={quoteTab===key?'selected':''} key={key} onClick={()=>setQuoteTab(key)}>{label} <span>{n}</span></button>)}</div><div className="customer-quotes">{Array.from({length:quoteTab==='requests'?6:quoteTab==='priced'?4:2},(_,i)=><div className="customer-quote" key={i}><span className="meta-icon"><FileText size={20}/></span><div><b>طلب #Parts-0513</b><span className={'pricing-badge '+(i%2?'blue':'red')}>{quoteTab==='confirmed'?'مؤكد':i%2?'تسعير مجاني':'تسعير سريع'}</span><small>تاريخ الطلب: 02 مايو 2025 · عدد القطع: 02</small><div className="customer-quote-progress"><div><i style={{width:[50,75,25][i%3]+'%'}}/></div><span>{i%2+1}/2 تم تسعيرها</span></div></div></div>)}</div></section><div className="customer-bottom-grid"><section className="customer-panel"><div className="customer-panel-title"><h2>المركبات</h2><button className="pricing-primary" onClick={()=>setVehicleModal(true)}><Plus size={13}/>إضافة مركبة جديدة</button></div>{vehicles.map((v,i)=><div className="customer-info-row" key={i}><span className="meta-icon"><Car size={20}/></span><div><b>{v.name}</b><span>{v.vin}</span><small>تاريخ الإضافة: 02 مايو {v.year}</small></div></div>)}</section><section className="customer-panel"><h2>العناوين</h2>{[0,1].map(i=><div className="customer-info-row" key={i}><span className="meta-icon"><Home size={20}/></span><div><b>عنوان المنزل</b>{i===0&&<span>العنوان الافتراضي</span>}<small>{client.address}</small><small>رقم الجوال: {client.phone}</small></div></div>)}</section></div>{vehicleModal&&<Modal title="إضافة مركبة جديدة" onClose={()=>setVehicleModal(false)}><form onSubmit={e=>{e.preventDefault();const next=[...vehicles,vehicle];setVehicles(next);onUpdate({vehicles:next});setVehicleModal(false);setVehicle({name:'',vin:'',year:'2025'})}}><Input label="اسم المركبة" value={vehicle.name} setValue={v=>setVehicle({...vehicle,name:v})} required/><Input label="رقم الهيكل" value={vehicle.vin} setValue={v=>setVehicle({...vehicle,vin:v})} required/><Input label="سنة الصنع" value={vehicle.year} setValue={v=>setVehicle({...vehicle,year:v})} required/><button className="cm-submit">إضافة المركبة</button></form></Modal>}{message&&<div className="definition-toast" role="status">{message}</div>}</div>}
-export default function Customers(){const[clients,setClients]=useState(initial),[search,setSearch]=useState(''),[filter,setFilter]=useState('all'),[page,setPage]=useState(1),[selected,setSelected]=useState([]),[detailId,setDetailId]=useState(null),[menu,setMenu]=useState(null),[modal,setModal]=useState(null),[targetId,setTargetId]=useState(null),[removing,setRemoving]=useState(null),[toast,setToast]=useState('');const target=clients.find(c=>c.id===targetId),detail=clients.find(c=>c.id===detailId);const update=(id,data)=>setClients(clients.map(c=>c.id===id?{...c,...data}:c));const notify=text=>{setToast(text);setTimeout(()=>setToast(''),3000)};const openModal=(type,id)=>{setTargetId(id);setModal(type);setMenu(null)};const filtered=clients.filter(c=>(filter==='all'||filter==='active'&&c.active||filter==='new'&&c.isNew||filter==='inactive'&&!c.active)&&[c.name,c.phone,c.email].some(v=>v.toLowerCase().includes(search.toLowerCase())));const pages=Math.max(1,Math.ceil(filtered.length/6)),safePage=Math.min(page,pages),visible=filtered.slice((safePage-1)*6,safePage*6);const toggle=id=>setSelected(selected.includes(id)?selected.filter(x=>x!==id):[...selected,id]);return <div className="customers-content">{detail?<CustomerDetails key={detail.id} client={detail} onBack={()=>setDetailId(null)} onEdit={()=>openModal('edit',detail.id)} onBalance={()=>openModal('balance',detail.id)} onCashback={()=>openModal('cashback',detail.id)} onUpdate={data=>update(detail.id,data)}/>:<><div className="pricing-heading"><h1>إدارة العملاء</h1><button className="pricing-primary" onClick={()=>openModal('add',null)}><Plus size={16}/>إضافة جديد</button></div><section className="customer-list-stats">{[[1842,'إجمالي العملاء','blue',Users],[148200,'إجمالي مشتريات الشهر','green',Wallet],[312,'طلبات العملاء هذا الشهر','pink',FileText],[124,'سلة متروكة','yellow',ShoppingBag]].map(([v,label,color,I])=><div className={color} key={label}><span className="stat-icon"><I size={20}/></span><b>{v===148200?<Money value={v}/>:v===124?<>{v} قطعة</>:v.toLocaleString('en-US')}</b><span>{label}</span></div>)}</section><section className="customer-panel"><div className="customer-toolbar"><div className="customer-filters">{[['all','الكل'],['active','نشط'],['new','جديد'],['inactive','غير نشط']].map(([key,label])=><button key={key} className={filter===key?'selected':''} onClick={()=>{setFilter(key);setPage(1)}}>{label}<span>{key==='all'?clients.length:key==='active'?clients.filter(c=>c.active).length:key==='new'?clients.filter(c=>c.isNew).length:clients.filter(c=>!c.active).length}</span></button>)}</div><label className="customer-search"><Search size={16}/><input aria-label="البحث باسم العميل أو رقم الجوال" value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}} placeholder="البحث بالاسم ورقم الطلب أو رقم الجوال..."/></label></div><div className="customer-table-scroll"><table className="customer-table"><thead><tr><th><input type="checkbox" aria-label="تحديد كل العملاء الظاهرين" checked={visible.length>0&&visible.every(c=>selected.includes(c.id))} onChange={e=>setSelected(e.target.checked?[...new Set([...selected,...visible.map(c=>c.id)])]:selected.filter(id=>!visible.some(c=>c.id===id)))}/></th>{['العميل','إجمالي الطلبات','السلات المتروكة','وسيلة الدفع','التسعيرات','آخر طلب','الحالة','الإجراءات'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{visible.map(c=><tr key={c.id}><td><input type="checkbox" aria-label={'تحديد العميل '+c.id} checked={selected.includes(c.id)} onChange={()=>toggle(c.id)}/></td><td><button className="customer-name" onClick={()=>setDetailId(c.id)}><Avatar client={c}/><span>{c.name}<small dir="ltr">{c.phone}</small></span></button></td><td><span className={c.orders>25?'customer-high-orders':''}>{c.orders}</span></td><td>{String(c.cartCount).padStart(2,'0')} قطع</td><td><span className="customer-payment">{c.id%3===0?'كاش':c.id%3===1?'💳':'PayPal'}</span></td><td>{c.quotes} تسعير</td><td>{['اليوم - 10:30 ص','أمس - 2:30 م','منذ يومين','منذ 3 أيام','منذ 4 أيام','منذ 5 أيام'][(c.id-1)%6]}</td><td><span className={'pricing-badge '+(c.active?'green':'red')}><i/>{c.blocked?'محظور':c.active?'نشط':'غير نشط'}</span></td><td><div className="customer-row-menu"><button aria-label={'خيارات العميل '+c.id} onClick={()=>setMenu(menu===c.id?null:c.id)}><MoreVertical size={18}/></button>{menu===c.id&&<div className="customer-context"><button onClick={()=>{setDetailId(c.id);setMenu(null)}}><Eye size={13}/>معاينة الطلب</button><button onClick={()=>openModal('edit',c.id)}><Edit3 size={13}/>تعديل العميل</button><button onClick={()=>{update(c.id,{active:!c.active});setMenu(null)}}><UserX size={13}/>{c.active?'غير نشط':'تنشيط العميل'}</button><button className="danger-text" onClick={()=>{setRemoving(c);setMenu(null)}}><Trash2 size={13}/>حذف العميل</button><button className="danger-text" onClick={()=>{update(c.id,{blocked:!c.blocked,active:c.blocked});setMenu(null)}}><ShieldX size={13}/>{c.blocked?'إلغاء حظر العميل':'حظر العميل'}</button></div>}</div></td></tr>)}</tbody></table>{!filtered.length&&<p className="pricing-empty">لا يوجد عملاء مطابقون للبحث.</p>}</div><div className="pricing-pagination"><button disabled={safePage===1} onClick={()=>setPage(safePage-1)}>السابق</button>{Array.from({length:pages},(_,i)=><button key={i} className={safePage===i+1?'selected':''} onClick={()=>setPage(i+1)}>{i+1}</button>)}<button disabled={safePage===pages} onClick={()=>setPage(safePage+1)}>التالي</button></div></section></>}{['add','edit'].includes(modal)&&<ClientForm client={modal==='edit'?target:null} onClose={()=>setModal(null)} onSave={data=>{if(modal==='edit')update(targetId,data);else setClients([{...data,id:Date.now(),active:true,isNew:true,blocked:false,balance:0,cashback:{minimum:150,percent:20,maximum:1500},orders:0,quotes:0,cartCount:0},...clients]);setModal(null);setPage(1);notify('تم حفظ العميل في المعاينة')}}/>}{modal==='balance'&&target&&<BalanceForm onClose={()=>setModal(null)} onSave={value=>{update(target.id,{balance:target.balance+value});setModal(null);notify('تمت إضافة رصيد معاينة للعميل')}}/>}{modal==='cashback'&&target&&<CashbackForm value={target.cashback} onClose={()=>setModal(null)} onSave={value=>{update(target.id,{cashback:value});setModal(null);notify('تم حفظ نسبة الكاش باك في المعاينة')}}/>}{removing&&<Modal title="حذف العميل؟" onClose={()=>setRemoving(null)}><p>{removing.name}</p><button className="primary danger" onClick={()=>{setClients(clients.filter(c=>c.id!==removing.id));setSelected(selected.filter(id=>id!==removing.id));setRemoving(null)}}>حذف</button><button className="pricing-back" onClick={()=>setRemoving(null)}>إلغاء</button></Modal>}{toast&&<div className="definition-toast" role="status">{toast}</div>}</div>}
-function UsersIcon(props){return <Package {...props}/>}
+import React, { useEffect, useState } from "react";
+import {
+  Plus,
+  Search,
+  MoreVertical,
+  Eye,
+  Edit3,
+  Trash2,
+  ShieldX,
+  Users,
+  Wallet,
+  FileText,
+  ShoppingBag,
+} from "lucide-react";
+import useAdminResource from "./use-admin-resource";
+import { adminRequest, queryString } from "./admin-api";
+import { Money, ResourceState, dateText, payments } from "./orders-ui";
+import {
+  CustomerAvatar,
+  CustomerBadge,
+  CustomerModal,
+  CustomerInput,
+  customerNumber,
+} from "./customer-ui";
+import {
+  CustomerForm,
+  CustomerMoneyForm,
+  CustomerLocationForm,
+} from "./CustomerForms";
+import CustomerDetails from "./CustomerDetails";
+import { customerPath, readCustomer, exportCustomers } from "./customer-api";
+import { useMutation, Feedback } from "./ProductExtras";
+import "./customers.css";
+function CustomerAccountAction({ action, onClose, onSaved }) {
+  const [reason, setReason] = useState(""),
+    [committed, setCommitted] = useState(false),
+    mutation = useMutation(),
+    client = action.client,
+    deleting = action.type === "delete",
+    status =
+      client.status === "blocked" || client.status === "inactive"
+        ? "active"
+        : "blocked";
+  async function save(e) {
+    e.preventDefault();
+    await mutation.run(async () => {
+      if (!committed) {
+        if (!deleting && status === "blocked" && !reason.trim())
+          throw new Error("أدخل سبب حظر العميل.");
+        await adminRequest(
+          customerPath(client.id) + (deleting ? "" : "/status"),
+          {
+            method: deleting ? "DELETE" : "PATCH",
+            ...(!deleting
+              ? {
+                  body: {
+                    status,
+                    ...(status === "blocked" ? { reason: reason.trim() } : {}),
+                  },
+                }
+              : {}),
+          },
+        );
+        setCommitted(true);
+      }
+      let row;
+      try {
+        row = await readCustomer(client.id);
+      } catch (error) {
+        if (!deleting || error.status !== 404) throw error;
+      }
+      if (deleting ? row && row.status !== "deleted" : row?.status !== status)
+        throw new Error("لم يتم تأكيد حالة العميل. أعد تحديث البيانات.");
+      await onSaved(row || { id: client.id, status: "deleted" });
+      onClose();
+    });
+  }
+  return (
+    <CustomerModal
+      title={
+        deleting
+          ? "حذف العميل؟"
+          : status === "blocked"
+            ? "حظر العميل"
+            : "تنشيط العميل"
+      }
+      onClose={onClose}
+      busy={mutation.busy}
+    >
+      <form onSubmit={save}>
+        <p>{client.name || "—"}</p>
+        {deleting ? (
+          <p className="customer-api-note">
+            هيتم حذف الحساب وتعطيل الدخول ومسح بيانات التواصل المرتبطة به.
+            الطلبات السابقة بتفضل محفوظة.
+          </p>
+        ) : (
+          status === "blocked" && (
+            <CustomerInput
+              label="سبب الحظر"
+              value={reason}
+              onChange={setReason}
+              required
+              disabled={committed}
+            />
+          )
+        )}
+        <Feedback mutation={mutation} />
+        {committed && (
+          <p className="customer-api-note">
+            تم إرسال العملية؛ إعادة المحاولة هتحدّث البيانات بدون تنفيذها تاني.
+          </p>
+        )}
+        <div className="quote-modal-buttons">
+          <button
+            className={deleting ? "primary danger" : "pricing-primary"}
+            disabled={mutation.busy}
+          >
+            {committed
+              ? "تحديث البيانات"
+              : deleting
+                ? "تأكيد حذف العميل"
+                : status === "blocked"
+                  ? "تأكيد الحظر"
+                  : "تأكيد التنشيط"}
+          </button>
+          <button
+            className="pricing-back"
+            type="button"
+            disabled={mutation.busy}
+            onClick={onClose}
+          >
+            إلغاء
+          </button>
+        </div>
+      </form>
+    </CustomerModal>
+  );
+}
+export default function Customers({ onSessionExpired }) {
+  const [search, setSearch] = useState(""),
+    [query, setQuery] = useState(""),
+    [filter, setFilter] = useState("all"),
+    [page, setPage] = useState(1),
+    [selected, setSelected] = useState([]),
+    [detailId, setDetailId] = useState(null),
+    [menu, setMenu] = useState(null),
+    [modal, setModal] = useState(null),
+    [revision, setRevision] = useState(0),
+    [notice, setNotice] = useState(""),
+    [noticeError, setNoticeError] = useState(false),
+    [exporting, setExporting] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuery(search.trim());
+      setPage(1);
+      setSelected([]);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+  useEffect(() => {
+    const close = (e) => {
+      if (e.type === "keydown" && e.key !== "Escape") return;
+      if (e.type === "keydown" || !e.target.closest(".customer-row-menu"))
+        setMenu(null);
+    };
+    document.addEventListener("pointerdown", close);
+    document.addEventListener("keydown", close);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      document.removeEventListener("keydown", close);
+    };
+  }, []);
+  useEffect(() => {
+    const home = () => {
+      setDetailId(null);
+      setRevision((n) => n + 1);
+    };
+    window.addEventListener("mypart:customers-home", home);
+    return () => window.removeEventListener("mypart:customers-home", home);
+  }, []);
+  const resource = useAdminResource(
+      "/api/admin/customers?" +
+        queryString({
+          limit: 6,
+          offset: (page - 1) * 6,
+          search: query || undefined,
+          status: filter === "all" ? undefined : filter,
+          newDays: 30,
+          sort: "created_at",
+          order: "desc",
+        }),
+      revision,
+    ),
+    summary = useAdminResource("/api/admin/customers/summary", revision);
+  const valid =
+      resource.data && !Array.isArray(resource.data.data)
+        ? { ...resource, error: new Error("رد قائمة العملاء غير صالح.") }
+        : resource,
+    rows = Array.isArray(resource.data?.data) ? resource.data.data : [],
+    metrics = resource.data?.meta?.metrics || {},
+    cards = summary.data?.data,
+    total = resource.data?.meta?.total,
+    pages = Math.max(1, Math.ceil(Number(total || 0) / 6));
+  useEffect(() => {
+    if (total != null && page > pages) setPage(pages);
+  }, [total, page, pages]);
+  const open = (type, client) => {
+      setMenu(null);
+      setModal({ type, client });
+    },
+    toggle = (id) =>
+      setSelected((old) =>
+        old.includes(id) ? old.filter((x) => x !== id) : [...old, id],
+      );
+  async function saved(row, created = false) {
+    setNoticeError(false);
+    setRevision((n) => n + 1);
+    setNotice(
+      created
+        ? "تمت إضافة العميل. توثيق الجوال بيتم من حسابه."
+        : "تم حفظ البيانات وتحديثها من الخادم.",
+    );
+    if (created) {
+      setPage(1);
+      setSearch("");
+      setQuery("");
+      setFilter("all");
+    }
+    if (row?.status === "deleted") {
+      if (detailId === row.id) setDetailId(null);
+      setSelected((old) => old.filter((id) => id !== row.id));
+      setNotice("تم حذف حساب العميل.");
+    }
+  }
+  async function exportFile() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await exportCustomers({
+        search: query || undefined,
+        status: filter === "all" ? undefined : filter,
+        newDays: 30,
+        sort: "created_at",
+        order: "desc",
+      });
+      setNoticeError(false);
+      setNotice("تم تصدير نتائج البحث من الخادم.");
+    } catch (error) {
+      setNoticeError(true);
+      setNotice(error.message);
+    } finally {
+      setExporting(false);
+    }
+  }
+  return (
+    <div className="customers-content">
+      {notice && (
+        <div
+          className={
+            "customer-api-notice" + (noticeError ? " customer-api-error" : "")
+          }
+          role={noticeError ? "alert" : "status"}
+        >
+          {notice}
+          <button aria-label="إغلاق الرسالة" onClick={() => setNotice("")}>
+            ×
+          </button>
+        </div>
+      )}
+      {detailId ? (
+        <CustomerDetails
+          key={detailId}
+          id={detailId}
+          revision={revision}
+          onBack={() => {
+            setDetailId(null);
+            setRevision((n) => n + 1);
+          }}
+          onModal={open}
+          onChanged={(message) => {
+            setRevision((n) => n + 1);
+            if (message) {
+              setNoticeError(false);
+              setNotice(message);
+            }
+          }}
+          onSessionExpired={onSessionExpired}
+        />
+      ) : (
+        <>
+          <div className="pricing-heading">
+            <h1>إدارة العملاء</h1>
+            <div className="customer-header-actions">
+              <button
+                className="pricing-export"
+                disabled={exporting}
+                onClick={exportFile}
+              >
+                {exporting ? "جارٍ التصدير…" : "تصدير النتائج CSV"}
+              </button>
+              <button className="pricing-primary" onClick={() => open("add")}>
+                <Plus size={16} />
+                إضافة جديد
+              </button>
+            </div>
+          </div>
+          <ResourceState resource={summary} onLogin={onSessionExpired} />
+          <section className="customer-list-stats">
+            {[
+              [cards?.customers?.total, "إجمالي العملاء", "blue", Users],
+              [
+                cards?.purchases?.amount,
+                "مشتريات الفترة",
+                "green",
+                Wallet,
+                true,
+              ],
+              [cards?.orders?.count, "طلبات الفترة", "pink", FileText],
+              [
+                cards?.abandonedCarts?.count,
+                "سلة متروكة",
+                "yellow",
+                ShoppingBag,
+              ],
+            ].map(([v, label, color, Icon, money]) => (
+              <div className={color} key={label}>
+                <span className="stat-icon">
+                  <Icon size={20} />
+                </span>
+                <b>{money ? <Money value={v} /> : customerNumber(v)}</b>
+                <span>{label}</span>
+              </div>
+            ))}
+          </section>
+          {cards?.period && (
+            <p className="customer-api-note">
+              فترة المشتريات والطلبات: من {cards.period.from} إلى{" "}
+              {cards.period.to} بتوقيت السعودية.
+            </p>
+          )}
+          <section className="customer-panel">
+            <div className="customer-toolbar">
+              <div className="customer-filters">
+                {[
+                  ["all", "الكل", "total_customers"],
+                  ["active", "نشط", "active_customers"],
+                  ["new", "جديد", "new_customers"],
+                  ["inactive", "غير نشط", "inactive_customers"],
+                  ["blocked", "محظور", "blocked_customers"],
+                  ["deleted", "محذوف", "deleted_customers"],
+                ].map(([key, label, count]) => (
+                  <button
+                    key={key}
+                    className={filter === key ? "selected" : ""}
+                    title={
+                      key === "new" ? "مسجلون خلال آخر 30 يومًا" : undefined
+                    }
+                    onClick={() => {
+                      setFilter(key);
+                      setPage(1);
+                      setSelected([]);
+                      setMenu(null);
+                    }}
+                  >
+                    {label}
+                    <span>{customerNumber(metrics[count])}</span>
+                  </button>
+                ))}
+              </div>
+              <label className="customer-search">
+                <Search size={16} />
+                <input
+                  aria-label="البحث باسم العميل أو رقم الجوال"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="البحث بالاسم أو الإيميل أو رقم الجوال..."
+                />
+              </label>
+            </div>
+            <ResourceState resource={valid} onLogin={onSessionExpired} />
+            <div className="customer-table-scroll">
+              <table className="customer-table">
+                <thead>
+                  <tr>
+                    <th>
+                      <input
+                        type="checkbox"
+                        aria-label="تحديد كل العملاء الظاهرين"
+                        checked={
+                          rows.length > 0 &&
+                          rows.every((c) => selected.includes(c.id))
+                        }
+                        onChange={(e) =>
+                          setSelected((old) =>
+                            e.target.checked
+                              ? [...new Set([...old, ...rows.map((c) => c.id)])]
+                              : old.filter(
+                                  (id) => !rows.some((c) => c.id === id),
+                                ),
+                          )
+                        }
+                      />
+                    </th>
+                    {[
+                      "العميل",
+                      "إجمالي الطلبات",
+                      "بنود السلة المتروكة",
+                      "وسيلة الدفع",
+                      "التسعيرات",
+                      "آخر طلب",
+                      "الحالة",
+                      "الإجراءات",
+                    ].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((client) => (
+                    <tr key={client.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          aria-label={"تحديد العميل " + client.id}
+                          checked={selected.includes(client.id)}
+                          onChange={() => toggle(client.id)}
+                        />
+                      </td>
+                      <td>
+                        <button
+                          className="customer-name"
+                          onClick={() => setDetailId(client.id)}
+                        >
+                          <CustomerAvatar client={client} />
+                          <span>
+                            {client.name || "—"}
+                            <small dir="ltr">
+                              {client.phone || client.email || "—"}
+                            </small>
+                          </span>
+                        </button>
+                      </td>
+                      <td>
+                        <span
+                          className={
+                            Number(client.orders_count) > 25
+                              ? "customer-high-orders"
+                              : ""
+                          }
+                        >
+                          {customerNumber(client.orders_count)}
+                        </span>
+                      </td>
+                      <td>{customerNumber(client.abandoned_cart_items)} بند</td>
+                      <td>
+                        <span className="customer-payment">
+                          {payments[
+                            client.top_payment_method ||
+                              client.last_payment_method
+                          ] ||
+                            client.top_payment_method ||
+                            client.last_payment_method ||
+                            "—"}
+                        </span>
+                      </td>
+                      <td>
+                        {customerNumber(client.pricing_requests_count)} تسعير
+                      </td>
+                      <td>{dateText(client.last_order_at)}</td>
+                      <td>
+                        <CustomerBadge customer={client} />
+                      </td>
+                      <td>
+                        <div className="customer-row-menu">
+                          <button
+                            aria-label={"خيارات العميل " + client.id}
+                            onClick={() =>
+                              setMenu(menu === client.id ? null : client.id)
+                            }
+                          >
+                            <MoreVertical size={18} />
+                          </button>
+                          {menu === client.id && (
+                            <div className="customer-context">
+                              <button
+                                onClick={() => {
+                                  setDetailId(client.id);
+                                  setMenu(null);
+                                }}
+                              >
+                                <Eye size={13} />
+                                تفاصيل العميل
+                              </button>
+                              <button
+                                disabled={client.status === "deleted"}
+                                onClick={() => open("edit", client)}
+                              >
+                                <Edit3 size={13} />
+                                تعديل العميل
+                              </button>
+                              <button
+                                className="danger-text"
+                                disabled={client.status === "deleted"}
+                                onClick={() => open("status", client)}
+                              >
+                                <ShieldX size={13} />
+                                {client.status === "blocked" ||
+                                client.status === "inactive"
+                                  ? "تنشيط العميل"
+                                  : "حظر العميل"}
+                              </button>
+                              <button
+                                className="danger-text"
+                                disabled={client.status === "deleted"}
+                                onClick={() => open("delete", client)}
+                              >
+                                <Trash2 size={13} />
+                                حذف العميل
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!valid.loading && !valid.error && !rows.length && (
+                <p className="pricing-empty">لا يوجد عملاء مطابقون للبحث.</p>
+              )}
+            </div>
+            <div className="pricing-pagination">
+              <button
+                disabled={page <= 1 || resource.loading}
+                onClick={() => setPage((n) => n - 1)}
+              >
+                السابق
+              </button>
+              {[...new Set([1, 2, 3, page, pages])]
+                .filter((n) => n <= pages)
+                .sort((a, b) => a - b)
+                .map((n) => (
+                  <button
+                    key={n}
+                    className={page === n ? "selected" : ""}
+                    onClick={() => setPage(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              <button
+                disabled={page >= pages || resource.loading}
+                onClick={() => setPage((n) => n + 1)}
+              >
+                التالي
+              </button>
+            </div>
+          </section>
+        </>
+      )}
+      {["add", "edit"].includes(modal?.type) && (
+        <CustomerForm
+          id={modal.client?.id}
+          onClose={() => setModal(null)}
+          onSaved={saved}
+          onSessionExpired={onSessionExpired}
+        />
+      )}
+      {["balance", "cashback"].includes(modal?.type) && (
+        <CustomerMoneyForm
+          client={modal.client}
+          mode={modal.type}
+          onClose={() => setModal(null)}
+          onSaved={saved}
+          onSessionExpired={onSessionExpired}
+        />
+      )}{" "}
+      {["vehicle", "address"].includes(modal?.type) && (
+        <CustomerLocationForm
+          client={modal.client}
+          type={modal.type}
+          onClose={() => setModal(null)}
+          onSaved={saved}
+          onSessionExpired={onSessionExpired}
+        />
+      )}{" "}
+      {["status", "delete"].includes(modal?.type) && (
+        <CustomerAccountAction
+          action={modal}
+          onClose={() => setModal(null)}
+          onSaved={saved}
+        />
+      )}
+    </div>
+  );
+}

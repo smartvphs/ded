@@ -63,6 +63,7 @@ const attributeLabels = {
 export default function PricingDetails({
   id,
   onBack,
+  backLabel="طلبات التسعير",
   onChanged,
   onSessionExpired,
 }) {
@@ -207,7 +208,7 @@ export default function PricingDetails({
             onClick={onBack}
           >
             <ArrowRight size={17} />
-            طلبات التسعير
+            {backLabel}
           </button>
         </div>
       </div>
