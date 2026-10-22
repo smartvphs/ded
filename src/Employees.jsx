@@ -1,7 +1,370 @@
-import React,{useState}from'react';import{Plus,Search,Eye,Trash2,X,ChevronDown,ChevronUp,ChartNoAxesCombined,ArrowRight}from'lucide-react';import './employees.css';
-const initial=Array.from({length:21},(_,i)=>({id:i+1,name:['محمد أحمد','علي سعيد','فاطمة يوسف','سارة خليل','حسن محمد','ليلى عبد الله','طارق نبيل'][i%7],email:['mohamedahmed@gmail.com','alisaeed@gmail.com','fatmayoussef@gmail.com','sarakhalil@gmail.com','hassanmohamed@gmail.com','lailaabdallah@gmail.com','lailaabdallah@gmail.com'][i%7],active:i%2===0}));
-const modules=['المديرين','التصنيفات','المنتجات','الطلبات','طلبات التسعير','العملاء','الموردين','الإشعارات'];
-const defaultPermissions=()=>Object.fromEntries(modules.map((m,i)=>[m,{read:![2].includes(i),write:![1,4].includes(i),delete:![1,4].includes(i)}]));
-function Paging({page,setPage,pages}){return <div className="pricing-pagination"><button disabled={page===1} onClick={()=>setPage(page-1)}>السابق</button>{Array.from({length:pages},(_,i)=><button key={i} className={page===i+1?'selected':''} onClick={()=>setPage(i+1)}>{i+1}</button>)}<button disabled={page===pages} onClick={()=>setPage(page+1)}>التالي</button></div>}
-function PermissionTable({employee,value,onChange,onBack}){const[expanded,setExpanded]=useState({}),[special,setSpecial]=useState(value.special||{statsView:true,statsEdit:false,bankView:true,bankEdit:false,priceView:true,priceEdit:false});const toggle=(module,key)=>onChange({...value,[module]:{...value[module],[key]:!value[module][key]}});const extra=(key)=>{const updated={...special,[key]:!special[key]};setSpecial(updated);onChange({...value,special:updated})};return <section className="employee-permissions"><div className="employee-permission-title"><h1>صلاحيات الموظف {employee.name}</h1><button onClick={onBack}><ArrowRight size={15}/>إدارة الموظفين</button></div><div className="employee-table-scroll"><table className="permission-table"><thead><tr>{['صلاحيات','قراءة','كتابة','حذف'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{modules.map(module=><React.Fragment key={module}><tr><td>{['التصنيفات','العملاء'].includes(module)?<button className="permission-expand" aria-expanded={!!expanded[module]} onClick={()=>setExpanded({...expanded,[module]:!expanded[module]})}>{expanded[module]?<ChevronUp size={13}/>:<ChevronDown size={13}/>} {module}</button>:module}</td>{[['read','قراءة'],['write','كتابة'],['delete','حذف']].map(([key,label])=><td key={key}><input type="checkbox" aria-label={label+' '+module} checked={value[module]?.[key]||false} onChange={()=>toggle(module,key)}/></td>)}</tr>{expanded[module]&&<tr className="special-permission-row"><td colSpan={4}><section className="permission-extra"><div className="permission-extra-heading"><span><b>{module==='التصنيفات'?'إعدادات خاصة بالتصنيفات':'إعدادات خاصة بقسم العملاء'}</b><small>تحديد الصلاحيات الفرعية لهذا القسم</small></span><span className="meta-icon"><ChartNoAxesCombined size={18}/></span></div><div className="permission-extra-grid">{(module==='التصنيفات'?[['statsView','عرض الإحصائيات'],['statsEdit','تعديل الإحصائيات']]:[['bankView','عرض نسبة الكاش باك'],['bankEdit','تعديل نسبة الكاش باك'],['priceView','عرض إعادة تسعير العميل'],['priceEdit','تعديل إعادة تسعير العميل']]).map(([key,label])=><label key={key}><span>{label}</span><input type="checkbox" checked={!!special[key]} onChange={()=>extra(key)}/></label>)}</div></section></td></tr>}</React.Fragment>)}</tbody></table></div><p className="permission-demo-note">التغييرات للمعاينة الحالية فقط.</p></section>}
-export default function Employees(){const[employees,setEmployees]=useState(initial),[search,setSearch]=useState(''),[page,setPage]=useState(1),[selected,setSelected]=useState([]),[detail,setDetail]=useState(null),[permissions,setPermissions]=useState({}),[adding,setAdding]=useState(false),[name,setName]=useState(''),[email,setEmail]=useState(''),[active,setActive]=useState(true),[error,setError]=useState(''),[removing,setRemoving]=useState(null);const filtered=employees.filter(e=>[e.name,e.email,e.active?'نشط':'غير نشط'].some(v=>v.toLowerCase().includes(search.toLowerCase())));const pages=Math.max(1,Math.ceil(filtered.length/7)),safePage=Math.min(page,pages),visible=filtered.slice((safePage-1)*7,safePage*7);const toggle=id=>setSelected(selected.includes(id)?selected.filter(x=>x!==id):[...selected,id]);if(detail)return <PermissionTable employee={detail} value={permissions[detail.id]||defaultPermissions()} onChange={v=>setPermissions({...permissions,[detail.id]:v})} onBack={()=>setDetail(null)}/>;return <div className="employees-content"><div className="pricing-heading"><h1>إدارة الموظفين</h1><button className="pricing-primary" onClick={()=>{setAdding(true);setError('')}}><Plus size={16}/>إضافة جديد</button></div><section className="employee-list"><div className="employee-search"><Search size={15}/><input aria-label="البحث باسم الموظف أو الحالة" placeholder="البحث باسم الموظف أو الحالة..." value={search} onChange={e=>{setSearch(e.target.value);setPage(1)}}/></div><div className="employee-table-scroll"><table className="employee-table"><thead><tr><th><input type="checkbox" aria-label="تحديد كل الموظفين الظاهرين" checked={visible.length>0&&visible.every(e=>selected.includes(e.id))} onChange={e=>setSelected(e.target.checked?[...new Set([...selected,...visible.map(e=>e.id)])]:selected.filter(id=>!visible.some(e=>e.id===id)))}/></th>{['اسم الموظف','البريد الإلكتروني','الحالة','الإجراءات'].map(h=><th key={h}>{h}</th>)}</tr></thead><tbody>{visible.map(employee=><tr key={employee.id}><td><input type="checkbox" aria-label={'تحديد الموظف '+employee.id} checked={selected.includes(employee.id)} onChange={()=>toggle(employee.id)}/></td><td>{employee.name}</td><td className="employee-email" dir="ltr">{employee.email}</td><td><span className={'pricing-badge '+(employee.active?'green':'orange')}><i/>{employee.active?'نشط':'غير نشط'}</span></td><td><div className="employee-actions"><button className="def-eye" aria-label={'صلاحيات الموظف '+employee.id} onClick={()=>setDetail(employee)}><Eye size={15}/></button><button className="pricing-delete" aria-label={'حذف الموظف '+employee.id} onClick={()=>setRemoving(employee)}><Trash2 size={15}/></button></div></td></tr>)}</tbody></table>{!filtered.length&&<p className="pricing-empty">لا يوجد موظفون مطابقون للبحث.</p>}</div><Paging page={safePage} setPage={setPage} pages={pages}/></section>{adding&&<div className="modal-backdrop" onClick={()=>setAdding(false)}><div className="cm-modal" role="dialog" aria-modal="true" aria-label="إضافة موظف جديد" onClick={e=>e.stopPropagation()}><button className="pricing-modal-close" aria-label="إغلاق" onClick={()=>setAdding(false)}><X size={18}/></button><h2>إضافة موظف جديد</h2><form onSubmit={e=>{e.preventDefault();if(employees.some(x=>x.email.toLowerCase()===email.trim().toLowerCase()))return setError('البريد الإلكتروني مضاف بالفعل');setEmployees([{id:Date.now(),name:name.trim(),email:email.trim(),active},...employees]);setAdding(false);setName('');setEmail('');setActive(true);setPage(1)}}><label className="cm-field"><span>اسم الموظف*</span><input aria-label="اسم الموظف" value={name} onChange={e=>setName(e.target.value)} required/></label><label className="cm-field"><span>البريد الإلكتروني*</span><input type="email" aria-label="البريد الإلكتروني" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label className="employee-active"><input type="checkbox" checked={active} onChange={e=>setActive(e.target.checked)}/>موظف نشط</label>{error&&<p className="form-error" role="alert">{error}</p>}<button className="cm-submit" type="submit">إضافة الموظف</button></form></div></div>}{removing&&<div className="modal-backdrop" onClick={()=>setRemoving(null)}><div className="modal" onClick={e=>e.stopPropagation()}><h2>حذف الموظف {removing.name}؟</h2><div className="delete-options"><button className="primary danger" onClick={()=>{setEmployees(employees.filter(e=>e.id!==removing.id));setSelected(selected.filter(id=>id!==removing.id));setRemoving(null)}}>حذف</button><button onClick={()=>setRemoving(null)}>إلغاء</button></div></div></div>}</div>}
+import React, { useEffect, useState } from "react";
+import {
+  Plus,
+  Search,
+  Eye,
+  Trash2,
+  Edit3,
+  Power,
+  KeyRound,
+} from "lucide-react";
+import useAdminResource from "./use-admin-resource";
+import { queryString } from "./admin-api";
+import { ResourceState } from "./orders-ui";
+import { normalizeStaff, permissionKeys } from "./staff-api";
+import { StaffForm, StaffAction } from "./StaffForms";
+import StaffDetail from "./StaffDetail";
+import "./employees.css";
+export default function Employees({ onSessionExpired }) {
+  const [search, setSearch] = useState(""),
+    [query, setQuery] = useState(""),
+    [status, setStatus] = useState(""),
+    [page, setPage] = useState(1),
+    [selected, setSelected] = useState([]),
+    [detail, setDetail] = useState(null),
+    [modal, setModal] = useState(null),
+    [revision, setRevision] = useState(0),
+    [notice, setNotice] = useState("");
+  const resource = useAdminResource(
+      "/api/admin/staff?" +
+        queryString({
+          search: query || undefined,
+          status: status || undefined,
+          limit: 7,
+          offset: (page - 1) * 7,
+        }),
+      revision,
+    ),
+    catalog = useAdminResource("/api/admin/permissions"),
+    me = useAdminResource("/api/admin/me", revision);
+  let catalogError = null;
+  if (catalog.data) {
+    try {
+      permissionKeys(catalog.data.data);
+    } catch (error) {
+      catalogError = error;
+    }
+  }
+  const valid =
+      resource.data && !Array.isArray(resource.data.data)
+        ? { ...resource, error: new Error("رد قائمة الموظفين غير صالح.") }
+        : resource,
+    permissionResource = catalogError
+      ? { ...catalog, error: catalogError }
+      : catalog,
+    canManage =
+      me.data?.data?.isSuperAdmin === true &&
+      !permissionResource.loading &&
+      !permissionResource.error,
+    rows = Array.isArray(resource.data?.data)
+      ? resource.data.data.map(normalizeStaff)
+      : [],
+    total = resource.data?.meta?.total,
+    pages = Math.max(1, Math.ceil(Number(total || 0) / 7)),
+    counts = resource.data?.meta?.statusCounts || {};
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setQuery(search.trim());
+      setPage(1);
+      setSelected([]);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [search]);
+  useEffect(() => {
+    if (total != null && page > pages) setPage(pages);
+  }, [total, page, pages]);
+  useEffect(() => {
+    const home = () => {
+      setDetail(null);
+      setRevision((n) => n + 1);
+    };
+    window.addEventListener("mypart:employees-home", home);
+    return () => window.removeEventListener("mypart:employees-home", home);
+  }, []);
+  const toggle = (id) =>
+    setSelected((old) =>
+      old.includes(id) ? old.filter((key) => key !== id) : [...old, id],
+    );
+  async function saved() {
+    setRevision((n) => n + 1);
+    setNotice("تم حفظ التغيير وتأكيده من الخادم.");
+    if (modal?.type === "add") {
+      setPage(1);
+      setSearch("");
+      setQuery("");
+      setStatus("");
+    }
+    if (modal?.type === "delete")
+      setSelected((old) => old.filter((id) => id !== modal.employee.id));
+  }
+  return (
+    <div className="employees-content">
+      {notice && (
+        <div className="staff-api-notice" role="status">
+          {notice}
+          <button aria-label="إغلاق الرسالة" onClick={() => setNotice("")}>
+            ×
+          </button>
+        </div>
+      )}
+      <ResourceState resource={me} onLogin={onSessionExpired} />
+      <ResourceState resource={permissionResource} onLogin={onSessionExpired} />
+      {detail && catalog.data && !catalogError ? (
+        <StaffDetail
+          employee={detail}
+          catalog={catalog.data}
+          me={me.data?.data}
+          onBack={() => {
+            setDetail(null);
+            setRevision((n) => n + 1);
+          }}
+          onChanged={() => setRevision((n) => n + 1)}
+          onSessionExpired={onSessionExpired}
+        />
+      ) : (
+        <>
+          <div className="pricing-heading">
+            <h1>إدارة الموظفين</h1>
+            <button
+              className="pricing-primary"
+              disabled={!canManage}
+              onClick={() => setModal({ type: "add" })}
+            >
+              <Plus size={16} />
+              إضافة جديد
+            </button>
+          </div>
+          <section className="employee-list">
+            <div className="staff-toolbar">
+              <div className="employee-search">
+                <Search size={15} />
+                <input
+                  aria-label="البحث باسم الموظف أو البريد الإلكتروني"
+                  placeholder="البحث باسم الموظف أو البريد الإلكتروني..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+              <select
+                aria-label="حالة الموظفين"
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  setPage(1);
+                  setSelected([]);
+                }}
+              >
+                <option value="">الكل ({counts.all ?? "—"})</option>
+                <option value="active">نشط ({counts.active ?? "—"})</option>
+                <option value="inactive">
+                  غير نشط ({counts.inactive ?? "—"})
+                </option>
+                <option value="deleted">محذوف ({counts.deleted ?? "—"})</option>
+              </select>
+            </div>
+            <ResourceState resource={valid} onLogin={onSessionExpired} />
+            <div className="employee-table-scroll">
+              <table className="employee-table">
+                <thead>
+                  <tr>
+                    <th>
+                      <input
+                        type="checkbox"
+                        aria-label="تحديد كل الموظفين الظاهرين"
+                        checked={
+                          rows.length > 0 &&
+                          rows.every((row) => selected.includes(row.id))
+                        }
+                        onChange={(e) =>
+                          setSelected((old) =>
+                            e.target.checked
+                              ? [...new Set([...old, ...rows.map((r) => r.id)])]
+                              : old.filter(
+                                  (id) => !rows.some((r) => r.id === id),
+                                ),
+                          )
+                        }
+                      />
+                    </th>
+                    {[
+                      "اسم الموظف",
+                      "البريد الإلكتروني",
+                      "الحالة",
+                      "الإجراءات",
+                    ].map((h) => (
+                      <th key={h}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((employee) => (
+                    <tr key={employee.id}>
+                      <td>
+                        <input
+                          type="checkbox"
+                          aria-label={"تحديد الموظف " + employee.id}
+                          checked={selected.includes(employee.id)}
+                          onChange={() => toggle(employee.id)}
+                        />
+                      </td>
+                      <td>
+                        {employee.name || "—"}
+                        {employee.isSuperAdmin && (
+                          <small className="staff-super-only">أدمن رئيسي</small>
+                        )}
+                      </td>
+                      <td className="employee-email" dir="ltr">
+                        {employee.email || "—"}
+                      </td>
+                      <td>
+                        <span
+                          className={
+                            "pricing-badge " +
+                            (employee.deletedAt
+                              ? "red"
+                              : employee.isActive
+                                ? "green"
+                                : "orange")
+                          }
+                        >
+                          <i />
+                          {employee.deletedAt
+                            ? "محذوف"
+                            : employee.isActive
+                              ? "نشط"
+                              : "غير نشط"}
+                        </span>
+                      </td>
+                      <td>
+                        <div className="employee-actions">
+                          <button
+                            className="def-eye"
+                            aria-label={"صلاحيات الموظف " + employee.id}
+                            disabled={!catalog.data || !!catalogError}
+                            onClick={() => setDetail(employee)}
+                          >
+                            <Eye size={15} />
+                          </button>
+                          <button
+                            className="cm-edit"
+                            aria-label={"تعديل الموظف " + employee.id}
+                            disabled={!canManage || !!employee.deletedAt}
+                            onClick={() => setModal({ type: "edit", employee })}
+                          >
+                            <Edit3 size={15} />
+                          </button>
+                          <button
+                            className="cm-edit"
+                            aria-label={
+                              (employee.isActive
+                                ? "إيقاف الموظف "
+                                : "تنشيط الموظف ") + employee.id
+                            }
+                            disabled={
+                              !canManage ||
+                              !!employee.deletedAt ||
+                              employee.id === me.data?.data?.id
+                            }
+                            title={
+                              employee.id === me.data?.data?.id
+                                ? "الحساب الحالي"
+                                : undefined
+                            }
+                            onClick={() =>
+                              setModal({ type: "status", employee })
+                            }
+                          >
+                            <Power size={15} />
+                          </button>
+                          {employee.role === "staff" && (
+                            <button
+                              className="cm-edit"
+                              aria-label={
+                                "تغيير كلمة مرور الموظف " + employee.id
+                              }
+                              disabled={!canManage || !!employee.deletedAt}
+                              onClick={() =>
+                                setModal({ type: "password", employee })
+                              }
+                            >
+                              <KeyRound size={15} />
+                            </button>
+                          )}
+                          <button
+                            className="pricing-delete"
+                            aria-label={"حذف الموظف " + employee.id}
+                            disabled={
+                              !canManage ||
+                              !!employee.deletedAt ||
+                              employee.isSuperAdmin ||
+                              employee.id === me.data?.data?.id
+                            }
+                            title={
+                              employee.isSuperAdmin
+                                ? "الأدمن الرئيسي لا يمكن حذفه"
+                                : undefined
+                            }
+                            onClick={() =>
+                              setModal({ type: "delete", employee })
+                            }
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!valid.loading && !valid.error && !rows.length && (
+                <p className="pricing-empty">لا يوجد موظفون مطابقون للبحث.</p>
+              )}
+            </div>
+            <div className="pricing-pagination">
+              <button
+                disabled={page <= 1 || resource.loading}
+                onClick={() => setPage((n) => n - 1)}
+              >
+                السابق
+              </button>
+              {[...new Set([1, 2, 3, page, pages])]
+                .filter((n) => n <= pages)
+                .sort((a, b) => a - b)
+                .map((n) => (
+                  <button
+                    key={n}
+                    className={page === n ? "selected" : ""}
+                    onClick={() => setPage(n)}
+                  >
+                    {n}
+                  </button>
+                ))}
+              <button
+                disabled={page >= pages || resource.loading}
+                onClick={() => setPage((n) => n + 1)}
+              >
+                التالي
+              </button>
+            </div>
+          </section>
+        </>
+      )}
+      {["add", "edit"].includes(modal?.type) && catalog.data && (
+        <StaffForm
+          employee={modal.employee}
+          catalog={catalog.data}
+          onClose={() => setModal(null)}
+          onSaved={saved}
+        />
+      )}{" "}
+      {["status", "password", "delete"].includes(modal?.type) && (
+        <StaffAction
+          type={modal.type}
+          employee={modal.employee}
+          onClose={() => setModal(null)}
+          onSaved={saved}
+        />
+      )}
+    </div>
+  );
+}
