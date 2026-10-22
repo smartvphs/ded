@@ -11,13 +11,15 @@ const {
   customerBody,
   creditBody,
   cashbackBody,
+  verifyCashback,
+  customerNextStatus,
   customerVehicleBody,
   validateCustomerSave,
   readCustomer,
 } = await import(
   "data:text/javascript;base64," + Buffer.from(source).toString("base64")
 );
-test("create normalizes Saudi phone and edit never sends unsupported profile fields", () => {
+test("create normalizes Saudi phone; edit uses documented keys and excludes phone", () => {
   assert.deepEqual(
     customerBody({ name: " أحمد علي ", phone: "055 123 4567", email: "" }),
     { name: "أحمد علي", phone: "+966551234567", email: null },
@@ -34,7 +36,7 @@ test("create normalizes Saudi phone and edit never sends unsupported profile fie
       },
       true,
     ),
-    { name: "أحمد علي", email: "a@example.com" },
+    { name: "أحمد علي", email: "a@example.com", notes: "bad" },
   );
   assert.throws(() =>
     customerBody({ name: "أ", phone: "0551234567", email: "" }),
@@ -87,4 +89,83 @@ test("read-back confirms identity and values rather than returning a fake saved 
   validateCustomerSave(row, { name: "أحمد", phone: "+966551234567" });
   assert.throws(() => validateCustomerSave(row, { name: "اسم تجاهله الخادم" }));
   await assert.rejects(() => readCustomer("other"));
+});
+
+test("admin photo/notes use documented fields, clearing and readback aliases", () => {
+  const draft = {
+    name: "أحمد علي",
+    email: "",
+    avatarUrl: "https://res.cloudinary.com/test/image/upload/avatar.png",
+    notes: "ملاحظات",
+  };
+  const body = customerBody(draft, true);
+  assert.equal(body.avatarUrl, draft.avatarUrl);
+  assert.equal(body.notes, "ملاحظات");
+  validateCustomerSave(
+    {
+      name: "أحمد علي",
+      email: null,
+      avatar_url: draft.avatarUrl,
+      admin_notes: "ملاحظات",
+    },
+    body,
+  );
+  const cleared = customerBody({ ...draft, avatarUrl: null, notes: "" }, true);
+  assert.equal(cleared.avatarUrl, null);
+  assert.equal(cleared.notes, null);
+  validateCustomerSave(
+    { name: "أحمد علي", email: null, avatar_url: null, admin_notes: "" },
+    cleared,
+  );
+  assert.throws(() =>
+    customerBody({ ...draft, avatarUrl: "data:image/png;base64,test" }, true),
+  );
+  assert.throws(() =>
+    customerBody({ ...draft, notes: "س".repeat(1001) }, true),
+  );
+  assert.throws(() =>
+    validateCustomerSave({ avatar_url: null }, { avatarUrl: draft.avatarUrl }),
+  );
+  assert.deepEqual(
+    customerBody(draft, true, {
+      avatar_url: draft.avatarUrl,
+      admin_notes: draft.notes,
+    }),
+    { name: "أحمد علي", email: null },
+  );
+});
+test("cashback saves official limits, null defaults and zero distinctly; inactive stays a read filter", () => {
+  const body = cashbackBody("5", { minOrderValue: "200", maxCashback: "50" });
+  assert.deepEqual(body, {
+    cashbackPercent: 5,
+    minOrderValue: 200,
+    maxCashback: 50,
+  });
+  verifyCashback(
+    {
+      cashback_percent: "5.00",
+      cashback_min_order: "200.00",
+      cashback_max_amount: "50.00",
+    },
+    body,
+  );
+  assert.deepEqual(
+    cashbackBody(null, { minOrderValue: "", maxCashback: null }),
+    { cashbackPercent: null, minOrderValue: null, maxCashback: null },
+  );
+  assert.deepEqual(
+    cashbackBody("0", { minOrderValue: "0", maxCashback: "0" }),
+    { cashbackPercent: 0, minOrderValue: 0, maxCashback: 0 },
+  );
+  assert.throws(() => cashbackBody("5", { maxCashback: "-1" }));
+  assert.throws(() => cashbackBody("5", { minOrderValue: "1.001" }));
+  assert.throws(() =>
+    verifyCashback({ cashback_percent: null }, { cashbackPercent: 0 }),
+  );
+  assert.throws(() =>
+    verifyCashback({ cashback_percent: 5, cashback_min_order: null }, body),
+  );
+  assert.equal(customerNextStatus({ status: "blocked" }), "active");
+  assert.equal(customerNextStatus({ status: "active" }), "blocked");
+  assert.notEqual(customerNextStatus({ status: "inactive" }), "inactive");
 });

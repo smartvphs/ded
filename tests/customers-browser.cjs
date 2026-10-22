@@ -30,7 +30,10 @@ const assert = require("node:assert/strict");
       failCredit = true,
       failWalletRead = false,
       unknownCredit = false,
-      failExport = true;
+      failExport = true,
+      failAvatarUpload = true,
+      failCashbackRead = false,
+      cashbackFailOnce = true;
     const users = Array.from({ length: 7 }, (_, i) => ({
       id: "c" + (i + 1),
       name: "عميل حقيقي " + (i + 1),
@@ -84,9 +87,40 @@ const assert = require("node:assert/strict");
       "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX7kAAAAASUVORK5CYII=",
       "base64",
     );
+    await c.route("https://res.cloudinary.com/**", (r) =>
+      r.fulfill({ contentType: "image/png", body: png }),
+    );
     await c.route("https://example.com/**", (r) =>
       r.fulfill({ contentType: "image/png", body: png }),
     );
+    await c.route("https://api.cloudinary.com/**", async (r) => {
+      assert.equal(r.request().headers().authorization, undefined);
+      const body = r.request().postData();
+      for (const key of [
+        "folder",
+        "timestamp",
+        "allowed_formats",
+        "signature",
+        "api_key",
+        "file",
+      ])
+        assert(body.includes('name="' + key + '"'));
+      if (failAvatarUpload) {
+        failAvatarUpload = false;
+        return r.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ error: { message: "upload failed" } }),
+        });
+      }
+      return r.fulfill({
+        contentType: "application/json",
+        body: JSON.stringify({
+          secure_url:
+            "https://res.cloudinary.com/fixture-cloud/image/upload/avatar.png",
+        }),
+      });
+    });
     const reply = (r, data, meta, status = 200, message = "Success") =>
       r.fulfill({
         status,
@@ -171,6 +205,10 @@ const assert = require("node:assert/strict");
       const target = users.find((x) => path === "/api/admin/customers/" + x.id);
       if (target) {
         if (m === "GET") {
+          if (target.id === "c1" && failCashbackRead) {
+            failCashbackRead = false;
+            return reply(r, null, null, 503, "تعذر تأكيد إعدادات الكاش باك");
+          }
           if (target.id === "created" && failCreatedRead) {
             failCreatedRead = false;
             return reply(r, null, null, 503, "تعذر تأكيد العميل");
@@ -178,12 +216,19 @@ const assert = require("node:assert/strict");
           return reply(r, target);
         }
         if (m === "PATCH") {
-          assert.deepEqual(Object.keys(body).sort(), ["email", "name"]);
+          assert(
+            Object.keys(body).every((key) =>
+              ["name", "email", "avatarUrl", "notes"].includes(key),
+            ),
+          );
           if (failEdit) {
             failEdit = false;
             return reply(r, null, null, 422, "البريد غير مقبول");
           }
-          Object.assign(target, body);
+          Object.assign(target, { name: body.name, email: body.email });
+          if (Object.hasOwn(body, "avatarUrl"))
+            target.avatar_url = body.avatarUrl;
+          if (Object.hasOwn(body, "notes")) target.admin_notes = body.notes;
           return reply(r, target);
         }
         if (m === "DELETE") {
@@ -194,7 +239,22 @@ const assert = require("node:assert/strict");
           return reply(r, { deleted: true });
         }
       }
+      if (path === "/api/uploads/signature") {
+        assert.equal(u.searchParams.get("type"), "avatars");
+        return reply(r, {
+          cloudName: "fixture-cloud",
+          apiKey: "test-public",
+          signature: "test-signature",
+          uploadParams: {
+            folder: "car-parts/avatars",
+            timestamp: 1792620000,
+            allowed_formats: "jpg,jpeg,png,webp",
+          },
+          maxFileSizeBytes: 5242880,
+        });
+      }
       if (path === "/api/admin/customers/c1/status") {
+        assert(["active", "blocked"].includes(body.status));
         users.find((x) => x.id === "c1").status = body.status;
         return reply(r, { id: "c1", status: body.status });
       }
@@ -229,7 +289,15 @@ const assert = require("node:assert/strict");
       }
       if (path === "/api/wallet/admin/c1/cashback") {
         const user = users.find((x) => x.id === "c1");
+        if (cashbackFailOnce) {
+          cashbackFailOnce = false;
+          failCashbackRead = true;
+        }
         user.cashback_percent = body.cashbackPercent;
+        if (Object.hasOwn(body, "minOrderValue"))
+          user.cashback_min_order = body.minOrderValue;
+        if (Object.hasOwn(body, "maxCashback"))
+          user.cashback_max_amount = body.maxCashback;
         user.wallet.cashbackPercent = body.cashbackPercent;
         return reply(r, { id: "c1", cashback_percent: body.cashbackPercent });
       }
@@ -416,6 +484,40 @@ const assert = require("node:assert/strict");
     await dialog()
       .getByLabel("البريد الإلكتروني", { exact: true })
       .fill("edited@example.com");
+    await dialog()
+      .getByLabel("ملاحظات الإدارة", { exact: true })
+      .fill("ملاحظات الإدارة الجديدة");
+    await dialog()
+      .getByLabel("صورة العميل", { exact: true })
+      .setInputFiles({
+        name: "bad.html",
+        mimeType: "text/html",
+        buffer: Buffer.from("<p>bad</p>"),
+      });
+    await dialog()
+      .getByText("اختر صورة JPG أو PNG أو WebP بحد أقصى 5 ميجابايت.", {
+        exact: true,
+      })
+      .waitFor();
+    await dialog().getByLabel("صورة العميل", { exact: true }).setInputFiles({
+      name: "avatar.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+    await dialog()
+      .getByText("تعذر رفع الصورة. حاول مرة أخرى.", { exact: true })
+      .waitFor();
+    await dialog().getByLabel("صورة العميل", { exact: true }).setInputFiles({
+      name: "avatar.png",
+      mimeType: "image/png",
+      buffer: png,
+    });
+    await dialog().locator(".customer-avatar-editor img").waitFor();
+    await p.waitForFunction(
+      () =>
+        document.querySelector(".customer-avatar-editor img")?.src ===
+        "https://res.cloudinary.com/fixture-cloud/image/upload/avatar.png",
+    );
     await submit("حفظ التعديلات");
     await dialog().getByText("البريد غير مقبول", { exact: true }).waitFor();
     assert.equal(
@@ -424,6 +526,26 @@ const assert = require("node:assert/strict");
     );
     await submit("حفظ التعديلات");
     await closed();
+    await p
+      .getByLabel("البحث باسم العميل أو رقم الجوال", { exact: true })
+      .fill("");
+    assert.equal(
+      users[0].avatar_url,
+      "https://res.cloudinary.com/fixture-cloud/image/upload/avatar.png",
+    );
+    assert.equal(users[0].admin_notes, "ملاحظات الإدارة الجديدة");
+    await p
+      .getByRole("button", { name: "خيارات العميل c1", exact: true })
+      .click();
+    await p.getByRole("button", { name: "تعديل العميل", exact: true }).click();
+    await dialog()
+      .getByRole("button", { name: "إزالة الصورة", exact: true })
+      .click();
+    await dialog().getByLabel("ملاحظات الإدارة", { exact: true }).fill("");
+    await submit("حفظ التعديلات");
+    await closed();
+    assert.equal(users[0].avatar_url, null);
+    assert.equal(users[0].admin_notes, null);
     await p
       .getByLabel("البحث باسم العميل أو رقم الجوال", { exact: true })
       .fill("");
@@ -492,15 +614,34 @@ const assert = require("node:assert/strict");
     assert.equal(writes.filter((w) => w.path.endsWith("/adjust")).length, 2);
     assert.equal(users.find((x) => x.id === "c1").wallet.balance, "50.25");
     await p.getByRole("button", { name: "نسبة كاش باك", exact: true }).click();
-    assert.ok(
-      await dialog()
-        .getByLabel("حد أدنى الطلب (عرض فقط)", { exact: true })
-        .isDisabled(),
-    );
+    await dialog()
+      .getByLabel("استخدام نسبة كاش باك المنصة", { exact: true })
+      .uncheck();
     await dialog().getByLabel("نسبة الكاش باك", { exact: true }).fill("0");
+    await dialog().getByLabel("حد أدنى الطلب", { exact: true }).fill("200");
+    await dialog().getByLabel("حد أعلى الكاش باك", { exact: true }).fill("50");
+    await submit("تأكيد");
+    await dialog()
+      .getByText("تعذر تأكيد إعدادات الكاش باك", { exact: true })
+      .waitFor();
+    await submit("تحديث البيانات");
+    await closed();
+    assert.equal(writes.filter((w) => w.path.endsWith("/cashback")).length, 1);
+    await p.getByText("الكاش باك: 0%", { exact: true }).waitFor();
+    assert.equal(users[0].cashback_min_order, 200);
+    assert.equal(users[0].cashback_max_amount, 50);
+    await p.getByRole("button", { name: "نسبة كاش باك", exact: true }).click();
+    await dialog().getByLabel("حد أدنى الطلب", { exact: true }).fill("");
+    await dialog().getByLabel("حد أعلى الكاش باك", { exact: true }).fill("");
+    await dialog()
+      .getByLabel("استخدام نسبة كاش باك المنصة", { exact: true })
+      .check();
     await submit("تأكيد");
     await closed();
-    await p.getByText("الكاش باك: 0%", { exact: true }).waitFor();
+    assert.equal(users[0].cashback_percent, null);
+    assert.equal(users[0].cashback_min_order, null);
+    assert.equal(users[0].cashback_max_amount, null);
+
     await p.getByRole("button", { name: "إضافة عنوان", exact: true }).click();
     await dialog().getByLabel("المدينة", { exact: true }).fill("الرياض");
     await dialog().getByLabel("الحي", { exact: true }).fill("العليا");
@@ -599,7 +740,7 @@ const assert = require("node:assert/strict");
     assert.equal(users.find((x) => x.id === "c3").status, "deleted");
     assert.deepEqual(errors, []);
     console.log(
-      "PASS customers: server list/search/paging/summary, protected CSV, edit constraints/422, block/unblock, actual orders/pricing navigation, wallet 422 and verification retry without double credit, uncertain credit lock, cashback zero, saved vehicle/address, real cart reminder, soft deletion, create verification retry, mobile and no runtime errors.",
+      "PASS customers including signed avatar upload/retry/removal, editable/clearable admin notes, all cashback limits/defaults/zero and readback-only retry; server list/search/paging/summary, protected CSV, edit constraints/422, block/unblock, actual orders/pricing navigation, wallet 422 and verification retry without double credit, uncertain credit lock, cashback zero, saved vehicle/address, real cart reminder, soft deletion, create verification retry, mobile and no runtime errors.",
     );
   } finally {
     await b.close();

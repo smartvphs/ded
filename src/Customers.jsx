@@ -28,7 +28,12 @@ import {
   CustomerLocationForm,
 } from "./CustomerForms";
 import CustomerDetails from "./CustomerDetails";
-import { customerPath, readCustomer, exportCustomers } from "./customer-api";
+import {
+  customerPath,
+  readCustomer,
+  exportCustomers,
+  customerNextStatus,
+} from "./customer-api";
 import { useMutation, Feedback } from "./ProductExtras";
 import "./customers.css";
 function CustomerAccountAction({ action, onClose, onSaved }) {
@@ -37,16 +42,12 @@ function CustomerAccountAction({ action, onClose, onSaved }) {
     mutation = useMutation(),
     client = action.client,
     deleting = action.type === "delete",
-    status =
-      client.status === "blocked" || client.status === "inactive"
-        ? "active"
-        : "blocked";
+    status = customerNextStatus(client);
   async function save(e) {
     e.preventDefault();
     await mutation.run(async () => {
       if (!committed) {
-        if (!deleting && status === "blocked" && !reason.trim())
-          throw new Error("أدخل سبب حظر العميل.");
+        if (reason.length > 300) throw new Error("سبب الحظر بحد أقصى 300 حرف.");
         await adminRequest(
           customerPath(client.id) + (deleting ? "" : "/status"),
           {
@@ -55,7 +56,9 @@ function CustomerAccountAction({ action, onClose, onSaved }) {
               ? {
                   body: {
                     status,
-                    ...(status === "blocked" ? { reason: reason.trim() } : {}),
+                    ...(status === "blocked" && reason.trim()
+                      ? { reason: reason.trim() }
+                      : {}),
                   },
                 }
               : {}),
@@ -98,9 +101,9 @@ function CustomerAccountAction({ action, onClose, onSaved }) {
           status === "blocked" && (
             <CustomerInput
               label="سبب الحظر"
+              maxLength={300}
               value={reason}
               onChange={setReason}
-              required
               disabled={committed}
             />
           )
@@ -505,8 +508,7 @@ export default function Customers({ onSessionExpired }) {
                                 onClick={() => open("status", client)}
                               >
                                 <ShieldX size={13} />
-                                {client.status === "blocked" ||
-                                client.status === "inactive"
+                                {client.status === "blocked"
                                   ? "تنشيط العميل"
                                   : "حظر العميل"}
                               </button>

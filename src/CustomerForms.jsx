@@ -9,16 +9,25 @@ import {
   customerBody,
   creditBody,
   cashbackBody,
+  verifyCashback,
   customerVehicleBody,
   customerPath,
   readCustomer,
   validateCustomerSave,
 } from "./customer-api";
+import CustomerAvatarEditor from "./CustomerAvatarEditor";
 import { addressBody } from "./customer-address";
 export function CustomerForm({ id, onClose, onSaved, onSessionExpired }) {
   const resource = useAdminResource(id ? customerPath(id) : null),
-    [draft, setDraft] = useState({ name: "", email: "", phone: "" }),
+    [draft, setDraft] = useState({
+      name: "",
+      email: "",
+      phone: "",
+      avatarUrl: null,
+      notes: "",
+    }),
     [ready, setReady] = useState(!id),
+    [uploading, setUploading] = useState(false),
     [saved, setSaved] = useState(null),
     [uncertain, setUncertain] = useState(false),
     mutation = useMutation();
@@ -29,6 +38,8 @@ export function CustomerForm({ id, onClose, onSaved, onSessionExpired }) {
         name: row.name || "",
         email: row.email || "",
         phone: row.phone || "",
+        avatarUrl: row.avatar_url || null,
+        notes: row.admin_notes || "",
       });
       setReady(true);
     }
@@ -36,11 +47,11 @@ export function CustomerForm({ id, onClose, onSaved, onSessionExpired }) {
   const set = (key, value) => setDraft((old) => ({ ...old, [key]: value }));
   async function save(e) {
     e.preventDefault();
-    if (uncertain || !ready) return;
+    if (uncertain || !ready || uploading) return;
     await mutation.run(async () => {
       let record = saved;
       if (!record) {
-        const body = customerBody(draft, !!id);
+        const body = customerBody(draft, !!id, resource.data?.data);
         let result;
         try {
           result = await adminRequest(
@@ -72,13 +83,13 @@ export function CustomerForm({ id, onClose, onSaved, onSessionExpired }) {
     <CustomerModal
       title={id ? "تعديل العميل" : "إضافة عميل جديد"}
       onClose={onClose}
-      busy={mutation.busy}
+      busy={mutation.busy || uploading}
     >
       <form onSubmit={save}>
         <ResourceState resource={resource} onLogin={onSessionExpired} />
         <fieldset
           className="customer-fieldset"
-          disabled={mutation.busy || !ready || deleted || !!saved}
+          disabled={mutation.busy || uploading || !ready || deleted || !!saved}
         >
           <CustomerInput
             label="الاسم الكامل"
@@ -108,22 +119,23 @@ export function CustomerForm({ id, onClose, onSaved, onSessionExpired }) {
               <p className="customer-api-note">
                 تغيير الجوال يتم من حساب العميل بالتحقق برمز OTP.
               </p>
+              <CustomerAvatarEditor
+                value={draft.avatarUrl}
+                name={draft.name}
+                onChange={(v) => set("avatarUrl", v)}
+                onBusyChange={setUploading}
+                disabled={mutation.busy || !ready || deleted || !!saved}
+              />
               <label className="customer-field">
-                <span>الصورة الشخصية الحالية</span>
-                <CustomerAvatar client={resource.data?.data || {}} />
-              </label>
-              <label className="customer-field">
-                <span>ملاحظات الإدارة (عرض فقط)</span>
+                <span>ملاحظات الإدارة</span>
                 <textarea
-                  value={resource.data?.data?.admin_notes || ""}
-                  readOnly
-                  disabled
-                  placeholder="لا توجد ملاحظات"
+                  aria-label="ملاحظات الإدارة"
+                  value={draft.notes}
+                  maxLength={1000}
+                  onChange={(e) => set("notes", e.target.value)}
+                  placeholder="أدخل ملاحظات الإدارة"
                 />
               </label>
-              <p className="customer-api-note">
-                حفظ الصورة والملاحظات من الإدارة غير موثق حاليًا.
-              </p>
             </>
           ) : (
             <p className="customer-api-note">
@@ -146,7 +158,9 @@ export function CustomerForm({ id, onClose, onSaved, onSessionExpired }) {
         )}
         <button
           className="cm-submit"
-          disabled={mutation.busy || !ready || deleted || uncertain}
+          disabled={
+            mutation.busy || uploading || !ready || deleted || uncertain
+          }
         >
           {saved ? "تحديث البيانات" : id ? "حفظ التعديلات" : "إضافة عميل جديد"}
         </button>
@@ -162,25 +176,48 @@ export function CustomerMoneyForm({
   onSessionExpired,
 }) {
   const resource = useAdminResource(
-      "/api/wallet/admin/" + encodeURIComponent(client.id),
+      mode === "balance"
+        ? "/api/wallet/admin/" + encodeURIComponent(client.id)
+        : null,
+    ),
+    cashbackResource = useAdminResource(
+      mode === "cashback" ? customerPath(client.id) : null,
     ),
     mutation = useMutation(),
+    [cashbackReady, setCashbackReady] = useState(mode !== "cashback"),
+    [minOrder, setMinOrder] = useState(""),
+    [maxCashback, setMaxCashback] = useState(""),
     [amount, setAmount] = useState(""),
     [reason, setReason] = useState(""),
     [percent, setPercent] = useState(
-      client.cashback_percent == null ? "" : String(client.cashback_percent),
+      client.cashback_percent == null ? null : String(client.cashback_percent),
     ),
     [committed, setCommitted] = useState(false),
     [uncertain, setUncertain] = useState(false);
+  useEffect(() => {
+    const row = cashbackResource.data?.data;
+    if (mode === "cashback" && row?.id === client.id && !cashbackReady) {
+      setPercent(
+        row.cashback_percent == null ? null : String(row.cashback_percent),
+      );
+      setMinOrder(
+        row.cashback_min_order == null ? "" : String(row.cashback_min_order),
+      );
+      setMaxCashback(
+        row.cashback_max_amount == null ? "" : String(row.cashback_max_amount),
+      );
+      setCashbackReady(true);
+    }
+  }, [cashbackResource.data, mode, client.id, cashbackReady]);
   async function save(e) {
     e.preventDefault();
-    if (uncertain) return;
+    if (uncertain || !cashbackReady) return;
     await mutation.run(async () => {
       if (!committed) {
         const body =
           mode === "balance"
             ? creditBody(amount, reason)
-            : cashbackBody(percent);
+            : cashbackBody(percent, { minOrderValue: minOrder, maxCashback });
         try {
           await adminRequest(
             "/api/wallet/admin/" +
@@ -195,17 +232,19 @@ export function CustomerMoneyForm({
         }
         setCommitted(true);
       }
-      const wallet = await adminRequest(
-        "/api/wallet/admin/" + encodeURIComponent(client.id),
-      );
-      if (wallet.data?.balance == null)
-        throw new Error("تعذر تأكيد رصيد المحفظة.");
-      if (
-        mode === "cashback" &&
-        (wallet.data.cashbackPercent == null ||
-          Number(wallet.data.cashbackPercent) !== Number(percent))
-      )
-        throw new Error("لم ترجع نسبة الكاش باك بالقيمة المحفوظة.");
+      if (mode === "cashback") {
+        const row = await readCustomer(client.id);
+        verifyCashback(
+          row,
+          cashbackBody(percent, { minOrderValue: minOrder, maxCashback }),
+        );
+      } else {
+        const wallet = await adminRequest(
+          "/api/wallet/admin/" + encodeURIComponent(client.id),
+        );
+        if (wallet.data?.balance == null)
+          throw new Error("تعذر تأكيد رصيد المحفظة.");
+      }
       await onSaved();
       onClose();
     });
@@ -218,6 +257,12 @@ export function CustomerMoneyForm({
     >
       <form onSubmit={save}>
         <ResourceState resource={resource} onLogin={onSessionExpired} />
+        {mode === "cashback" && (
+          <ResourceState
+            resource={cashbackResource}
+            onLogin={onSessionExpired}
+          />
+        )}
         {resource.data?.data?.balance != null && (
           <p className="customer-balance">
             الرصيد الحالي: <Money value={resource.data.data.balance} />
@@ -225,7 +270,7 @@ export function CustomerMoneyForm({
         )}
         <fieldset
           className="customer-fieldset"
-          disabled={mutation.busy || committed}
+          disabled={mutation.busy || committed || !cashbackReady}
         >
           {mode === "balance" ? (
             <>
@@ -249,9 +294,13 @@ export function CustomerMoneyForm({
             <>
               <div className="customer-form-grid">
                 <CustomerInput
-                  label="حد أدنى الطلب (عرض فقط)"
-                  value={client.cashback_min_order}
-                  disabled
+                  label="حد أدنى الطلب"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="إعدادات المنصة"
+                  value={minOrder}
+                  onChange={setMinOrder}
                 />
                 <CustomerInput
                   label="نسبة الكاش باك"
@@ -261,16 +310,31 @@ export function CustomerMoneyForm({
                   step="0.01"
                   value={percent}
                   onChange={setPercent}
-                  required
+                  disabled={percent === null}
+                  required={percent !== null}
                 />
               </div>
               <CustomerInput
-                label="حد أعلى الكاش باك (عرض فقط)"
-                value={client.cashback_max_amount}
-                disabled
+                label="حد أعلى الكاش باك"
+                type="number"
+                min="0"
+                step="0.01"
+                placeholder="إعدادات المنصة"
+                value={maxCashback}
+                onChange={setMaxCashback}
               />
+              <label className="customer-default-cashback">
+                <input
+                  type="checkbox"
+                  aria-label="استخدام نسبة كاش باك المنصة"
+                  checked={percent === null}
+                  onChange={(e) => setPercent(e.target.checked ? null : "0")}
+                />
+                استخدام نسبة كاش باك المنصة
+              </label>
               <p className="customer-api-note">
-                المتاح حفظ النسبة؛ تعديل الحد الأدنى والأقصى غير موثق.
+                سيب الحد الأدنى أو الأعلى فارغ عشان يستخدم إعدادات المنصة.
+                النسبة صفر بتوقف الكاش باك للعميل.
               </p>
             </>
           )}
@@ -290,7 +354,12 @@ export function CustomerMoneyForm({
         <button
           className="cm-submit"
           disabled={
-            mutation.busy || resource.loading || !!resource.error || uncertain
+            mutation.busy ||
+            resource.loading ||
+            !!resource.error ||
+            uncertain ||
+            !cashbackReady ||
+            !!cashbackResource.error
           }
         >
           {committed

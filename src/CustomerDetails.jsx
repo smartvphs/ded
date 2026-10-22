@@ -312,6 +312,22 @@ export default function CustomerDetails({
                   : customerNumber(client.cashback_percent) + "%"}
               </p>
               <p>
+                حد أدنى الطلب للكاش باك:{" "}
+                {client.cashback_min_order == null ? (
+                  "إعدادات المنصة"
+                ) : (
+                  <Money value={client.cashback_min_order} />
+                )}
+              </p>
+              <p>
+                حد أعلى الكاش باك:{" "}
+                {client.cashback_max_amount == null ? (
+                  "إعدادات المنصة"
+                ) : (
+                  <Money value={client.cashback_max_amount} />
+                )}
+              </p>
+              <p>
                 توثيق الجوال: {client.is_phone_verified ? "موثّق" : "غير موثّق"}
               </p>
               <p>تاريخ التسجيل: {dateText(client.created_at)}</p>
