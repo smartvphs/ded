@@ -2041,3 +2041,61 @@
 .su-internal-note textarea::placeholder {
   color: #ffad42;
 }
+.su-export-tools {
+  direction: ltr;
+}
+.su-button.su-pdf,
+.su-button.su-xls {
+  border: 0;
+  border-radius: 8px;
+  font-size: 11px;
+  min-height: 38px;
+  padding: 8px 16px;
+  direction: rtl;
+}
+.su-button.su-pdf {
+  background: #fa1d31;
+  color: white;
+}
+.su-button.su-xls {
+  background: #00a66d;
+  color: white;
+}
+.su-address-control {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+.su-address-control > a {
+  display: flex;
+  padding-left: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+.su-address-control > input {
+  min-width: 0;
+}
+.su-topline {
+  margin-bottom: 19px;
+}
+.su-page h2,
+.su-modal h2 {
+  line-height: 1.5;
+}
+.su-field > span {
+  line-height: 1.5;
+}
+.su-table td {
+  font-size: 14px;
+}
+.su-offer-products-panel > .su-panel-heading {
+  justify-content: flex-end;
+}
+.su-table .su-part-number {
+  font-size: 11px;
+  font-family: Arial, sans-serif;
+}
+.su-table .su-money .riyal-icon {
+  width: 15px;
+  height: 15px;
+}

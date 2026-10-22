@@ -11,8 +11,19 @@ const files = {
   analytics: ["Statistics & analysis.png", 1440, 1331],
   tickets: ["Suppliers Details-2.png", 1440, 1987],
   wallet: ["adding balance.png", 540, 541],
+  offerProducts: ["all suppliers-3.png", 1440, 1301],
+  offerItems: ["all suppliers-2.png", 1440, 1063],
 };
 export const supplierGlyphs = {
+  "pdf-export": ["offerProducts", 119, 141, 20, 20],
+  "xls-export": ["offerProducts", 247, 141, 20, 20],
+  "product-total": ["offerProducts", 1078, 225, 39, 39],
+  "product-active": ["offerProducts", 713, 225, 39, 39],
+  "product-cart": ["offerProducts", 347, 225, 39, 39],
+  "add-product": ["offerItems", 184, 642, 18, 18],
+  "quick-eye": ["offerItems", 171, 562, 20, 20],
+  "upload-files": ["offer", 1110, 201, 20, 22],
+  geo: ["form", 47, 376, 35, 35],
   all: ["list", 573, 742, 18, 18],
   money: ["wallet", 472, 382, 20, 24],
   send: ["tickets", 65, 1644, 50, 50],
@@ -162,6 +173,7 @@ export function SupplierButton({
   onClick,
   secondary = false,
   danger = false,
+  className = "",
   ...props
 }) {
   return (
@@ -171,7 +183,9 @@ export function SupplierButton({
       className={
         "su-button" +
         (secondary ? " secondary" : "") +
-        (danger ? " danger" : "")
+        (danger ? " danger" : "") +
+        " " +
+        className
       }
     >
       {icon && <SupplierIcon name={icon} size={icon === "plus" ? 15 : 20} />}

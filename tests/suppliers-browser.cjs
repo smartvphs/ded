@@ -506,9 +506,11 @@ const fs = require("node:fs");
     await shot("apply");
     await page.getByRole("button", { name: "إغلاق", exact: true }).click();
     await page
-      .getByRole("button", { name: "← العودة لملفات العروض", exact: true })
+      .locator(".sidebar")
+      .getByRole("button", { name: "ملفات العروض", exact: true })
       .click();
     await page
+      .locator(".sidebar")
       .getByRole("button", { name: "منتجات العروض", exact: true })
       .click();
     await page.locator(".su-table tbody tr").first().waitFor();

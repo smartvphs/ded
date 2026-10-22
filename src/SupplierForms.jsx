@@ -149,11 +149,26 @@ export function SupplierEditor({ supplier, onClose, onSaved }) {
                 />
               </SupplierField>
               <SupplierField label="العنوان *" icon="location" wide>
-                <input
-                  value={form.address}
-                  onChange={(e) => set("address", e.target.value)}
-                  placeholder="اكتب العنوان هنا"
-                />
+                <div className="su-address-control">
+                  <input
+                    value={form.address}
+                    onChange={(e) => set("address", e.target.value)}
+                    placeholder="اكتب العنوان هنا"
+                  />
+                  <a
+                    href={
+                      "https://maps.google.com/?q=" +
+                      encodeURIComponent(
+                        form.address || form.city || "السعودية",
+                      )
+                    }
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="فتح العنوان على الخريطة"
+                  >
+                    <SupplierIcon name="geo" size={35} />
+                  </a>
+                </div>
               </SupplierField>
               <SupplierField
                 label={

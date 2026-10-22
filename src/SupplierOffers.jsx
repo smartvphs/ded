@@ -56,9 +56,24 @@ export default function SupplierOffers({ onSessionExpired }) {
       setDetail(null);
       setPage(1);
       setTab("files");
+      setStatus("");
+      setSearch("");
+    };
+    const choose = (e) => {
+      if (["files", "products"].includes(e.detail)) {
+        setDetail(null);
+        setPage(1);
+        setTab(e.detail);
+        setStatus("");
+        setSearch("");
+      }
     };
     window.addEventListener("mypart:offers-home", home);
-    return () => window.removeEventListener("mypart:offers-home", home);
+    window.addEventListener("mypart:offers-tab", choose);
+    return () => {
+      window.removeEventListener("mypart:offers-home", home);
+      window.removeEventListener("mypart:offers-tab", choose);
+    };
   }, []);
   const rows = Array.isArray(resource.data?.data) ? resource.data.data : [];
   async function cancelOffer() {
@@ -95,13 +110,19 @@ export default function SupplierOffers({ onSessionExpired }) {
       <div className="su-topline">
         <h1>{tab === "files" ? "عروض الأسعار" : "إدارة المنتجات"}</h1>
         {tab === "products" && (
-          <div className="su-controls">
-            <SupplierButton secondary onClick={() => window.print()}>
+          <div className="su-controls su-export-tools">
+            <SupplierButton
+              className="su-pdf"
+              icon="pdf-export"
+              onClick={() => window.print()}
+            >
               تصدير PDF
             </SupplierButton>
             <SupplierButton
               secondary
-              disabled
+              onClick={() => setUpload(true)}
+              className="su-xls"
+              icon="xls-export"
               title="استيراد المنتجات غير متاح حاليًا"
             >
               استيراد XLS
@@ -109,39 +130,17 @@ export default function SupplierOffers({ onSessionExpired }) {
           </div>
         )}
       </div>
-      <div className="su-tabs">
-        <button
-          className={tab === "files" ? "active" : ""}
-          onClick={() => {
-            setTab("files");
-            setPage(1);
-            setStatus("");
-          }}
-        >
-          ملفات العروض
-        </button>
-        <button
-          className={tab === "products" ? "active" : ""}
-          onClick={() => {
-            setTab("products");
-            setPage(1);
-            setStatus("");
-          }}
-        >
-          منتجات العروض
-        </button>
-      </div>
       {tab === "files" ? (
         <>
           <div className="su-offer-upload">
             <div>
               <h3>
-                <SupplierIcon name="upload" size={20} /> رفع نموذج عروض الأسعار
-                الجاهز
+                <SupplierIcon name="upload-files" size={20} /> رفع نموذج عروض
+                الأسعار الجاهز
               </h3>
               <p>استخدم النموذج الرسمي لضمان قبول ملفك بشكل صحيح</p>
             </div>
-            <SupplierButton onClick={() => setUpload(true)}>
+            <SupplierButton icon="xls-export" onClick={() => setUpload(true)}>
               رفع ملف عروض أسعار
             </SupplierButton>
           </div>
@@ -206,23 +205,23 @@ export default function SupplierOffers({ onSessionExpired }) {
               {
                 label: "إجمالي الطلبات",
                 value: resource.data?.meta?.ordersCount,
-                icon: "replied",
+                icon: "product-total",
               },
               {
                 label: "منشور ونشط",
                 value: status === "active" ? resource.data?.meta?.total : null,
-                icon: "confirmed",
+                icon: "product-active",
                 tint: "green",
               },
               {
                 label: "منتجات في السلة",
                 value: null,
-                icon: "late",
+                icon: "product-cart",
                 tint: "yellow",
               },
             ]}
           />
-          <SupplierPanel>
+          <SupplierPanel className="su-offer-products-panel">
             <div className="su-panel-heading">
               <div className="su-controls">
                 <SupplierField label="البحث">
@@ -290,7 +289,7 @@ export default function SupplierOffers({ onSessionExpired }) {
                       <span>{row.product_name}</span>
                     </button>
                   </td>
-                  <td>{row.part_number || "—"}</td>
+                  <td className="su-part-number">{row.part_number || "—"}</td>
                   <td>{row.supplier_name}</td>
                   <td>{row.orders_count} طلب</td>
                   <td>
@@ -422,9 +421,6 @@ function SupplierOfferDetail({ id, onBack, onSessionExpired }) {
     file = resource.data?.data?.priceList;
   return (
     <div className="su-page">
-      <button className="su-back" onClick={onBack}>
-        ← العودة لملفات العروض
-      </button>
       <h1>عروض الأسعار</h1>
       {notice && (
         <p className="su-success" role="status">
@@ -562,12 +558,12 @@ function SupplierOfferDetail({ id, onBack, onSessionExpired }) {
                   <SupplierButton
                     secondary
                     onClick={() => setPreview(row.product_id)}
-                    icon="eye"
+                    icon="quick-eye"
                   >
                     عرض سريع
                   </SupplierButton>
                 ) : (
-                  <SupplierButton secondary disabled icon="plus">
+                  <SupplierButton secondary disabled icon="add-product">
                     إضافة للمنتجات
                   </SupplierButton>
                 )}

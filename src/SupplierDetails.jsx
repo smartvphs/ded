@@ -44,9 +44,6 @@ export default function SupplierDetails({ id, onBack, onSessionExpired }) {
   const refresh = () => setRevision((n) => n + 1);
   return (
     <div className="su-page su-details">
-      <button className="su-back" onClick={onBack}>
-        ← العودة للموردين
-      </button>
       <ResourceState resource={resource} onLogin={onSessionExpired} />
       {row && (
         <>
