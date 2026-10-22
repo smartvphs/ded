@@ -1,0 +1,186 @@
+.notifications-page {
+  min-height: 650px;
+}
+.nt-actions,
+.nt-toolbar,
+.nt-pagination {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.nt-actions button,
+.nt-toolbar button,
+.nt-pagination button,
+.nt-destination > button,
+.nt-confirm button,
+.nt-error button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #dbe5ff;
+  background: #fff;
+  color: #2157c8;
+  border-radius: 8px;
+  padding: 7px 11px;
+  font: inherit;
+  font-size: 12px;
+}
+.nt-toolbar {
+  background: #fff;
+  border-radius: 15px;
+  padding: 16px;
+  margin-bottom: 20px;
+  justify-content: space-between;
+}
+.nt-toolbar label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.nt-toolbar select,
+.nt-destination select {
+  font: inherit;
+  border: 1px solid #dce5f7;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: white;
+}
+.nt-actions button:disabled,
+.notifications-page button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.notifications-page .notification-body {
+  min-width: 0;
+}
+.notifications-page .notification-body > div {
+  min-width: 0;
+}
+.notifications-page .notification-body p {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.notifications-page .notification-body b {
+  overflow-wrap: anywhere;
+}
+.notifications-page .notification-body .nt-actions {
+  margin-top: 10px;
+}
+.nt-pagination {
+  justify-content: center;
+  padding: 16px;
+}
+.nt-pagination span {
+  font-size: 13px;
+}
+.nt-error {
+  padding: 14px;
+  color: #a22a32;
+  background: #fff0f0;
+  border-radius: 10px;
+  margin: 10px 0;
+}
+.nt-error button {
+  margin: 6px;
+}
+.nt-confirm {
+  background: #fff8ed;
+  border: 1px solid #f8d3a5;
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+.nt-confirm button {
+  margin: 8px;
+}
+.notifications-bell {
+  position: relative;
+}
+.notifications-bell > span {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: #f04452;
+  color: white;
+  border: 2px solid white;
+  border-radius: 20px;
+  padding: 1px 4px;
+  min-width: 19px;
+  font: 10px Arial;
+}
+.nt-destination {
+  background: #fff;
+  border-radius: 20px;
+  padding: 20px;
+  min-width: 0;
+}
+.nt-destination h2 {
+  font-size: 18px;
+  margin: 20px 0;
+}
+.nt-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.nt-facts > div {
+  background: #f5f7fd;
+  border-radius: 10px;
+  padding: 14px;
+}
+.nt-facts dt {
+  font-size: 12px;
+  color: #6c7e9b;
+  margin-bottom: 7px;
+}
+.nt-facts dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+}
+.nt-table {
+  overflow: auto;
+}
+.nt-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.nt-table td,
+.nt-table th {
+  padding: 12px;
+  border-bottom: 1px solid #e0e7f8;
+  font-size: 12px;
+  text-align: right;
+}
+@media (max-width: 650px) {
+  .notification-heading {
+    gap: 15px;
+    flex-wrap: wrap;
+  }
+  .notifications-page .notification-item {
+    padding: 12px;
+    align-items: flex-start;
+  }
+  .notifications-page .notification-symbol {
+    width: 35px;
+    height: 35px;
+  }
+  .notifications-page .notification-body {
+    gap: 9px;
+  }
+  .notifications-page .notification-body b {
+    font-size: 14px;
+  }
+  .notifications-page .notification-body p {
+    font-size: 12px;
+  }
+  .nt-facts {
+    grid-template-columns: 1fr;
+  }
+  .nt-destination {
+    padding: 12px;
+  }
+}

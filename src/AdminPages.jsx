@@ -1,6 +1,4 @@
-import React,{useState} from 'react';
-import {X,BookOpen,Flame} from 'lucide-react';
 import './admin-pages.css';
-export function Notifications(){const[items,setItems]=useState(Array.from({length:6},(_,i)=>({id:i,day:i<3?'اليوم':'الأمس',offer:i%3===1,read:i!==0})));const unread=items.filter(i=>!i.read).length;return <div className="admin-page notifications-page"><div className="notification-heading"><div><h1>الإشعارات</h1><p>{String(unread).padStart(2,'0')} إشعار غير مقروء</p></div><button onClick={()=>setItems(items.map(i=>({...i,read:true})))}>تحديد الكل</button></div>{['اليوم','الأمس'].map(day=><section className="notification-group" key={day}><h2>{day}</h2>{items.filter(i=>i.day===day).map(item=><article className={'notification-item '+(item.offer?'offer-notification':'order-notification')+(!item.read?' unread':'')} key={item.id}><button className="notification-body" onClick={()=>setItems(items.map(i=>i.id===item.id?{...i,read:true}:i))}><span className="notification-symbol">{item.offer?<Flame size={30} fill="#ffb122"/>:<BookOpen size={27}/>}</span><span><b>{item.offer?'عروض حصرية':'طلب # 5456'}</b><p>وفّر 35% من شراء المنتجات لفترة محدودة</p><small>منذ 4 ساعات</small></span></button><button className="notification-remove" aria-label={'حذف الإشعار '+item.id} onClick={()=>setItems(items.filter(i=>i.id!==item.id))}><X size={15}/></button></article>)}</section>)}</div>}
+export {default as Notifications} from './Notifications';
 export {default as Coupons} from './Coupons';
 export {default as AbandonedCarts} from './AbandonedCarts';
