@@ -412,6 +412,7 @@ const assert = require("node:assert/strict");
         });
       throw Error("Unexpected " + m + " " + p);
     });
+    await page.route('**/api/admin/notifications?*',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({success:true,data:{items:[],unreadCount:0},meta:{total:0}})}));
     await page.goto(
       (process.env.TEST_BASE_URL || "http://127.0.0.1:5189") + "/#categories",
     );

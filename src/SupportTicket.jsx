@@ -1,3 +1,4 @@
+import SupportManagement from "./SupportManagement";
 import React, { useEffect, useState } from "react";
 import { Send, RefreshCw } from "lucide-react";
 import { adminRequest } from "./admin-api";
@@ -33,6 +34,7 @@ export default function SupportTicket({
   onUncertain,
   onSessionExpired,
 }) {
+  const [managementBusy, setManagementBusy] = useState(false);
   const [resource, setResource] = useState({
       loading: true,
       data: null,
@@ -48,7 +50,7 @@ export default function SupportTicket({
     reply = useMutation(),
     statusMutation = useMutation();
   const row = resource.data,
-    busy = reply.busy || statusMutation.busy || uploading;
+    busy = reply.busy || statusMutation.busy || uploading || managementBusy;
   useEffect(() => {
     onBusyChange(busy);
     return () => onBusyChange(false);
@@ -163,9 +165,6 @@ export default function SupportTicket({
                   {label}
                 </option>
               ))}
-            </select>
-            <select aria-label="تعيين التذكرة" disabled>
-              <option>تعيين الموظف غير متاح حاليًا</option>
             </select>
             <button className="pricing-back" disabled={busy} onClick={refresh}>
               <RefreshCw size={14} />
@@ -320,9 +319,6 @@ export default function SupportTicket({
           <section className="support-quick-actions">
             <h2>إجراءات سريعة</h2>
             <div>
-              <button className="escalate" disabled title="غير متاح حاليًا">
-                رفع الأولوية للمشرف
-              </button>
               <button
                 className="close-ticket"
                 disabled={busy || row.status === "closed"}
@@ -343,26 +339,22 @@ export default function SupportTicket({
               >
                 إعادة فتح
               </button>
-              <button
-                className="delete-ticket"
-                disabled
-                title="غير متاح حاليًا"
-              >
-                حذف التذكرة
-              </button>
-              <button
-                className="internal-note"
-                disabled
-                title="غير متاح حاليًا"
-              >
-                إضافة ملاحظة داخلية
-              </button>
             </div>
-            <p className="support-api-note">
-              تعيين الموظف وتغيير الأولوية والملاحظات الداخلية والحذف غير متاحين
-              حاليًا.
-            </p>
           </section>
+          <SupportManagement
+            row={row}
+            disabled={reply.busy || statusMutation.busy || uploading}
+            onBusyChange={setManagementBusy}
+            onSessionExpired={onSessionExpired}
+            onUpdated={(fresh) => {
+              setResource({ loading: false, data: fresh, error: null });
+              onChanged();
+            }}
+            onDeleted={() => {
+              setResource({ loading: false, data: null, error: null });
+              onChanged();
+            }}
+          />
         </>
       )}
       {statusAction && (

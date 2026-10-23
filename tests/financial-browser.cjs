@@ -151,6 +151,7 @@ const assert = require("node:assert/strict");
               },
             },
           });
+        if(path==="/api/admin/reports/missing-costs")return send({data:{items:[],pagination:{total:0,limit:20,offset:0},totalSales:"0"}});
         if (path === "/api/admin/reports/pricing-parts") {
           const group = (label, key) => ({
             label,
@@ -191,6 +192,7 @@ const assert = require("node:assert/strict");
         throw new Error("Unexpected endpoint " + path);
       },
     );
+    await page.route('**/api/admin/notifications?*',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({success:true,data:{items:[],unreadCount:0},meta:{total:0}})}));
     await page.goto(
       (process.env.TEST_BASE_URL || "http://127.0.0.1:5189") + "/#finance",
     );
@@ -217,7 +219,7 @@ const assert = require("node:assert/strict");
       0,
     );
     assert(
-      (await page.locator(".finance-table-card").first().innerText()).includes(
+      (await page.locator(".finance-table-card").filter({hasText:"القطع المسعّرة"}).first().innerText()).includes(
         "50",
       ),
     );

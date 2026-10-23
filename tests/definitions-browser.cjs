@@ -43,7 +43,8 @@ const png=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42
  const upload=async()=>{await page.locator('.upload-box input[type=file]').setInputFiles({name:'test.png',mimeType:'image/png',buffer:png});await page.locator('.upload-preview').waitFor()};
  const saved=async()=>{await page.getByRole('status').filter({hasText:'تم الحفظ على الخادم.'}).waitFor()};
  const del=async locator=>{await locator.click();await page.locator('.delete-options').getByRole('button',{name:'حذف',exact:true}).click();await page.locator('.modal-backdrop').waitFor({state:'hidden'})};
- await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5182');await page.locator('.platform-number b').first().filter({hasText:'0'}).waitFor();
+ await page.route('**/api/admin/notifications?*', r => r.fulfill({status:200, contentType:'application/json', body:JSON.stringify({success:true,data:{items:[],unreadCount:0},meta:{total:0}})}));
+    await page.goto(process.env.TEST_BASE_URL || 'http://127.0.0.1:5182');await page.locator('.platform-number b').first().filter({hasText:'0'}).waitFor();
  await page.getByLabel('عدد القطع المتوفرة',{exact:true}).fill('5000');await page.getByLabel('عدد العملاء',{exact:true}).fill('0');await add();await saved();assert.deepEqual(db.counters.map(r=>r.value),[5000,1,2,0]);await page.reload();await page.locator('.platform-number b').first().filter({hasText:'5000+'}).waitFor();
  await tab('شركاء نجاح');await page.locator('.partner-card').waitFor();await upload();await add();await saved();await page.waitForFunction(()=>document.querySelectorAll('.partner-card').length===2);await del(page.locator('.partner-card .def-delete').last());assert.equal(db.partners.length,1);
  // Failed save preserves the selected image, shows no fake item, and can be retried.

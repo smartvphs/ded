@@ -29,7 +29,7 @@ Documented create/review, credit/deduction, ticket reply/status, offer apply/can
 
 ## What the UI does not fabricate
 
-The collection does not document supplier profile editing/deleting/blocking, working-hour persistence/filtering, make/balance filtering on the list, per-supplier response-time/activity metrics/trends, the complete pictured financial attribution/quality-profit breakdown, private ticket notes/priority escalation/deletion, admin price-list upload/deletion, or importing unmatched price-list rows as catalog products. These controls remain visible but disabled where applicable; unavailable numbers show a dash and charts show an empty state. Bank fields on admin supplier creation are explicitly rejected by the documented backend, so the fields are displayed read-only and the supplier-app requirement is explained. No unrelated endpoint or fake success was added for these pictured controls.
+The collection does not document supplier profile editing/deleting/blocking, working-hour persistence/filtering, make/balance filtering on the list, per-supplier response-time/activity metrics/trends, the complete pictured financial attribution/quality-profit breakdown, admin price-list upload/deletion, or importing unmatched price-list rows as catalog products. These controls remain visible but disabled where applicable; unavailable numbers show a dash and charts show an empty state. Bank fields on admin supplier creation are explicitly rejected by the documented backend, so the fields are displayed read-only and the supplier-app requirement is explained. No unrelated endpoint or fake success was added for these pictured controls.
 
 No universal supplier-ticket filter is documented: the supplier ticket list traverses source=supplier pages and selects exact supplier_id, avoiding displaying a different supplier's tickets as this supplier's. Server errors keep that list incomplete rather than displaying partial counts as complete.
 
@@ -39,3 +39,7 @@ No universal supplier-ticket filter is documented: the supplier ticket list trav
 - Chromium visual/navigation check covers the main list, analytics, pricing times, four supplier-detail tabs, add/credit/deduction/invoice dialogs, price-list files/detail, apply-offer modal, offer-products and mobile overflow.
 - Separate wallet test checks a mocked successful credit followed by a failed GET, modal close/reopen and GET-only retry with exactly one POST.
 - Browser tests use mocked API responses and a test-only authenticated session. They do not prove live authenticated backend writes; none were performed.
+
+## 2026-10-23 contract update
+
+The new support endpoints are now connected for supplier ticket assignment, priority, internal notes and ticket deletion through the shared support management component. See dashboard-audit-2026-10-23.md for current remaining contracts.

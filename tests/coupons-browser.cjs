@@ -251,6 +251,7 @@ const assert = require("node:assert/strict");
         throw new Error("Unexpected endpoint " + method + " " + path);
       },
     );
+    await page.route('**/api/admin/notifications?*',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({success:true,data:{items:[],unreadCount:0},meta:{total:0}})}));
     await page.goto(
       (process.env.TEST_BASE_URL || "http://127.0.0.1:5189") + "/#coupons",
     );
@@ -317,7 +318,7 @@ const assert = require("node:assert/strict");
       .getByRole("checkbox", { name: "تفعيل SAVE0", exact: true })
       .waitFor();
     await page.waitForFunction(
-      () => !document.querySelector('[aria-label="تفعيل SAVE0"]').checked,
+      () => { const toggle = document.querySelector('[aria-label="تفعيل SAVE0"]'); return toggle && !toggle.checked; },
     );
     assert.equal(coupons[0].is_active, false);
     await page

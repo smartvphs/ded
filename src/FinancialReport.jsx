@@ -1,3 +1,4 @@
+import MissingCosts from "./MissingCosts";
 import React, { useState } from "react";
 import {
   Coins,
@@ -291,6 +292,13 @@ export default function FinancialReport({ onSessionExpired }) {
           مش داخلة في الربح.
         </div>
       )}
+      <MissingCosts
+        key={period.from + period.to}
+        period={period}
+        account={account}
+        onSessionExpired={onSessionExpired}
+        onChanged={() => setRevision((n) => n + 1)}
+      />
       <section className="finance-balances">
         {[
           [f?.revenue?.grossSales, "إجمالي المبيعات", "blue", Coins],

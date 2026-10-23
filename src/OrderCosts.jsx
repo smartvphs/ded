@@ -1,3 +1,4 @@
+import ManualItemCost from "./ManualItemCost";
 import React, { useEffect, useState } from "react";
 import { adminRequest } from "./admin-api";
 import useAdminResource from "./use-admin-resource";
@@ -6,6 +7,8 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
   const resource = useAdminResource(
     "/api/orders/admin/" + encodeURIComponent(id) + "/costs",
   );
+  const me = useAdminResource("/api/admin/me");
+  const [itemEditor, setItemEditor] = useState(null);
   const [draft, setDraft] = useState({}),
     [busy, setBusy] = useState(false),
     [notice, setNotice] = useState("");
@@ -42,6 +45,15 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
           "/api/orders/admin/" + encodeURIComponent(id) + "/shipping",
           { method: "PATCH", body },
         );
+      const fresh = await adminRequest(
+        "/api/orders/admin/" + encodeURIComponent(id) + "/costs",
+      );
+      if (
+        Object.entries(body).some(
+          ([key, value]) => Number(fresh.data?.summary?.[key]) !== value,
+        )
+      )
+        throw new Error("تعذر تأكيد التكاليف المحفوظة.");
       resource.reload();
       await onSaved?.();
       setNotice("تم تحديث تقرير التكاليف من الخادم.");
@@ -53,6 +65,21 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
   }
   return (
     <>
+      {itemEditor && (
+        <ManualItemCost
+          orderId={id}
+          itemId={itemEditor.id}
+          unitCost={
+            itemEditor.costSource === "manual" ? itemEditor.unitCost : null
+          }
+          productName={itemEditor.productName}
+          onClose={() => setItemEditor(null)}
+          onSaved={async () => {
+            resource.reload();
+            await onSaved?.();
+          }}
+        />
+      )}
       <ResourceState resource={resource} onLogin={onSessionExpired} />
       {notice && (
         <p role="status" className="op-notice">
@@ -74,6 +101,7 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
                       "التكلفة",
                       "الإجمالي",
                       "الربح",
+                      "الإجراء",
                     ].map((x) => (
                       <th key={x}>{x}</th>
                     ))}
@@ -96,6 +124,22 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
                       </td>
                       <td>
                         <Money value={row.profit} />
+                      </td>
+                      <td>
+                        <button
+                          className="op-outline"
+                          disabled={
+                            !(
+                              me.data?.data?.isSuperAdmin ||
+                              me.data?.data?.permissions?.includes(
+                                "orders.manage",
+                              )
+                            ) || row.source === "service"
+                          }
+                          onClick={() => setItemEditor(row)}
+                        >
+                          تعديل تكلفة الوحدة
+                        </button>
                       </td>
                     </tr>
                   ))}
