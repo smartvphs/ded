@@ -1,3 +1,5 @@
+> Superseded frontend status: the user requested restoration of the original UI after this update. See dashboard-ui-restoration-2026-10-23.md. The new settings/support/cost workflows described below are no longer exposed; API contract findings remain reference material.
+
 # Dashboard integration audit — 2026-10-23
 
 Scope: application routes and controls compared with the latest user-supplied Admin API Postman collection (256 documented requests). A contract audit and mocked browser verification do not establish successful authenticated production writes. No production financial changes, customer notifications or ticket messages were sent during verification.

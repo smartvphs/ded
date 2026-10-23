@@ -119,9 +119,6 @@ const assert = require("node:assert/strict");
             contentType: "application/json",
             body: JSON.stringify({ success: status < 400, ...data }),
           });
-        if(path==='/api/admin/me')return send({data:{id:'admin',isSuperAdmin:true}});
-        if(path==='/api/support-tickets/admin/assignees')return send({data:{items:[{id:'staff',name:'الموظف',open_tickets:1}]}});
-        if(path==='/api/support-tickets/admin/categories')return send({data:{items:[{id:'type1',code:'payment',name:'الدفع',is_active:true,tickets_count:2},{id:'type2',code:'technical',name:'فني',is_active:true,tickets_count:2}]}});
         if (path === "/api/uploads/signature") {
           assert.equal(u.searchParams.get("type"), "tickets");
           assert.equal(u.searchParams.get("strictFormats"), "true");
@@ -223,7 +220,7 @@ const assert = require("node:assert/strict");
         throw new Error("Unexpected endpoint " + method + " " + path);
       },
     );
-    await page.route('**/api/admin/notifications?*',r=>r.fulfill({contentType:'application/json',body:JSON.stringify({success:true,data:{items:[],unreadCount:0},meta:{total:0}})}));
+    await page.route('**/api/admin/notifications?*', r => r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({success:true,data:{items:[],unreadCount:0},meta:{total:0}})}));
     await page.goto(
       (process.env.TEST_BASE_URL || "http://127.0.0.1:5189") + "/#support",
     );
@@ -235,7 +232,7 @@ const assert = require("node:assert/strict");
       .getByRole("textbox", { name: "رسالة الرد", exact: true })
       .waitFor();
     assert(
-      await page.getByLabel("تعيين التذكرة", { exact: true }).isEnabled(),
+      await page.getByLabel("تعيين التذكرة", { exact: true }).isDisabled(),
     );
     assert(
       await page
@@ -245,7 +242,7 @@ const assert = require("node:assert/strict");
     assert(
       await page
         .getByRole("button", { name: "حذف التذكرة", exact: true })
-        .isEnabled(),
+        .isDisabled(),
     );
     assert.equal(
       await page.locator(".support-attachments a").getAttribute("href"),
@@ -399,12 +396,12 @@ const assert = require("node:assert/strict");
       .getByRole("button", { name: "أنواع المشكلة", exact: true })
       .click();
     await page
-      .getByRole("heading", { name: "أنواع المشكلة", exact: true })
+      .getByRole("heading", { name: "الأنواع الواردة في التذاكر", exact: true })
       .waitFor();
     assert(
       await page
         .getByRole("button", { name: "إضافة نوع مشكلة", exact: true })
-        .isEnabled(),
+        .isDisabled(),
     );
     await page
       .getByRole("button", { name: "تذاكر المساعدة", exact: true })
@@ -431,7 +428,7 @@ const assert = require("node:assert/strict");
     );
     assert.deepEqual(errors, []);
     console.log(
-      "Support browser PASS: real list filters/counts/paging, details/messages/attachment URLs, upload validation/retry, reply 422 and confirmation retry without duplicate POST, status/readback/close/reopen, uncertain reply lock across selection, latest official type catalog and management controls, 403 and mobile/no JS errors.",
+      "Support browser PASS: real list filters/counts/paging, details/messages/attachment URLs, upload validation/retry, reply 422 and confirmation retry without duplicate POST, status/readback/close/reopen, uncertain reply lock across selection, disabled undocumented actions, 403 and mobile/no JS errors.",
     );
   } finally {
     await browser.close();

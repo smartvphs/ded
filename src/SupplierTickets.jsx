@@ -1,4 +1,3 @@
-import SupportManagement from "./SupportManagement";
 import React, { useEffect, useState } from "react";
 import { adminRequest } from "./admin-api";
 import useAdminResource from "./use-admin-resource";
@@ -186,17 +185,16 @@ function SupplierThread({ id, supplier, onSessionExpired, onBusy, onChanged }) {
     [error, setError] = useState(""),
     [record, setRecord] = useState(previous?.record || null),
     [uncertain, setUncertain] = useState(!!previous?.uncertain),
-    [action, setAction] = useState(null),
-    [managementBusy, setManagementBusy] = useState(false);
+    [action, setAction] = useState(null);
   const resource = useAdminResource(
       "/api/support-tickets/admin/" + encodeURIComponent(id),
       revision,
     ),
     row = resource.data?.data;
   useEffect(() => {
-    onBusy(busy || managementBusy);
+    onBusy(busy);
     return () => onBusy(false);
-  }, [busy, managementBusy]);
+  }, [busy]);
   async function send(e) {
     e.preventDefault();
     if (busy || uncertain) return;
@@ -325,6 +323,14 @@ function SupplierThread({ id, supplier, onSessionExpired, onBusy, onChanged }) {
                 <small>{date(message.created_at)}</small>
               </article>
             ))}
+            <div className="su-internal-note">
+              <span>ملاحظة داخلية</span>
+              <textarea
+                disabled
+                aria-label="ملاحظة داخلية"
+                placeholder="الملاحظات الداخلية غير متاحة حاليًا."
+              />
+            </div>
             <form className="su-chat-form" onSubmit={send}>
               <textarea
                 placeholder="اكتب ردك هنا... (يظهر للعميل والمورد)"
@@ -357,6 +363,7 @@ function SupplierThread({ id, supplier, onSessionExpired, onBusy, onChanged }) {
           </section>
           <SupplierPanel title="إجراءات سريعة">
             <div className="su-ticket-quick">
+              <button disabled>رفع الأولوية القصوى</button>
               <button
                 disabled={busy || row.status === "closed"}
                 onClick={() => setAction("closed")}
@@ -369,19 +376,9 @@ function SupplierThread({ id, supplier, onSessionExpired, onBusy, onChanged }) {
               >
                 إعادة فتح
               </button>
+              <button disabled>حذف التذكرة</button>
             </div>
           </SupplierPanel>
-          <SupportManagement
-            row={row}
-            disabled={busy}
-            onBusyChange={setManagementBusy}
-            onSessionExpired={onSessionExpired}
-            onUpdated={() => {
-              setRevision((n) => n + 1);
-              onChanged();
-            }}
-            onDeleted={onChanged}
-          />
           {action && (
             <SupplierModal
               title="تأكيد تغيير حالة التذكرة"

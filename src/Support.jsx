@@ -1,4 +1,3 @@
-import SupportCategories from "./SupportCategories";
 import React, { useEffect, useState } from "react";
 import { Search, Plus, ArrowRight, RefreshCw } from "lucide-react";
 import useAdminResource from "./use-admin-resource";
@@ -18,7 +17,6 @@ export default function Support({ onSessionExpired }) {
     [status, setStatus] = useState(""),
     [source, setSource] = useState(""),
     [priority, setPriority] = useState(""),
-    [assignedTo, setAssignedTo] = useState(""),
     [category, setCategory] = useState(""),
     [page, setPage] = useState(1),
     [selected, setSelected] = useState(null),
@@ -30,11 +28,6 @@ export default function Support({ onSessionExpired }) {
     [period, setPeriod] = useState({}),
     [dates, setDates] = useState({ from: "", to: "" }),
     [dateError, setDateError] = useState("");
-  const categoriesResource = useAdminResource(
-      "/api/support-tickets/admin/categories",
-      revision,
-    ),
-    assignees = useAdminResource("/api/support-tickets/admin/assignees");
   const resource = useAdminResource(
       ticketsPath({
         search: query,
@@ -42,7 +35,6 @@ export default function Support({ onSessionExpired }) {
         source,
         priority,
         category,
-        assignedTo,
         ...period,
         page,
       }),
@@ -140,31 +132,29 @@ export default function Support({ onSessionExpired }) {
         </div>
       </div>
       {types ? (
-        <SupportCategories
-          onSessionExpired={onSessionExpired}
-          onChanged={() => setRevision((n) => n + 1)}
-        />
+        <section className="support-types">
+          <h2>الأنواع الواردة في التذاكر</h2>
+          <p className="support-api-note">
+            دي الأنواع اللي ظهرت في التذاكر اللي تم تحميلها. إضافة وتعديل وحذف
+            الأنواع غير متاحين حاليًا.
+          </p>
+          <div className="support-type-chips">
+            {Object.entries(categories).map(([code, name]) => (
+              <span key={code}>
+                <b>{name}</b>
+              </span>
+            ))}
+          </div>
+          {!Object.keys(categories).length && (
+            <p className="support-api-note">لا توجد أنواع محمّلة.</p>
+          )}
+          <button className="pricing-primary" disabled>
+            إضافة نوع مشكلة
+          </button>
+        </section>
       ) : (
         <>
           <div className="support-list-filters">
-            <label>
-              الموظف المسؤول
-              <select
-                aria-label="تصفية الموظف المسؤول"
-                disabled={busy}
-                value={assignedTo}
-                onChange={(e) => filter(setAssignedTo, e.target.value)}
-              >
-                <option value="">كل الموظفين</option>
-                <option value="me">المسندة لي</option>
-                <option value="unassigned">غير المعينة</option>
-                {(assignees.data?.data?.items || []).map((x) => (
-                  <option key={x.id} value={x.id}>
-                    {x.name}
-                  </option>
-                ))}
-              </select>
-            </label>
             <label>
               مصدر التذكرة
               <select
@@ -203,13 +193,11 @@ export default function Support({ onSessionExpired }) {
                 onChange={(e) => filter(setCategory, e.target.value)}
               >
                 <option value="">كل الأنواع</option>
-                {(categoriesResource.data?.data?.items || []).map(
-                  ({ code, name }) => (
-                    <option key={code} value={code}>
-                      {name}
-                    </option>
-                  ),
-                )}
+                {Object.entries(categories).map(([code, name]) => (
+                  <option key={code} value={code}>
+                    {name}
+                  </option>
+                ))}
               </select>
             </label>
             <form onSubmit={applyDates}>
