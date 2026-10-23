@@ -1,3 +1,4 @@
+import SupportAvatar from "./SupportAvatar";
 import useTicketAdministration from "./use-ticket-administration";
 import TicketAdminDialog, { TicketAssignment } from "./TicketAdminDialog";
 import React, { useEffect, useState } from "react";
@@ -222,7 +223,7 @@ export default function SupportTicket({
               <p className="support-description">{row.description}</p>
             )}
             <div className="support-customer">
-              <span className="support-avatar">{name?.[0] || "—"}</span>
+              <SupportAvatar row={row} fallbackRow={listRow} name={name} />
               <b>
                 {name || "—"} ·{" "}
                 {source === "supplier"

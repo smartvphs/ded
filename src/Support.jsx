@@ -1,3 +1,4 @@
+import SupportAvatar from "./SupportAvatar";
 import React, { useEffect, useState } from "react";
 import { Search, Plus, ArrowRight, RefreshCw } from "lucide-react";
 import useAdminResource from "./use-admin-resource";
@@ -303,9 +304,7 @@ export default function Support({ onSessionExpired }) {
                         <TicketBadge status={row.status} />
                       </div>
                       <div className="ticket-list-person">
-                        <span className="support-avatar">
-                          {name?.[0] || "—"}
-                        </span>
+                        <SupportAvatar row={row} name={name} />
                         <span>{name || "—"}</span>
                         <small
                           className={

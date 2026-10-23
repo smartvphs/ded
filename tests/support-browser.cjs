@@ -119,6 +119,20 @@ const assert = require("node:assert/strict");
             contentType: "application/json",
             body: JSON.stringify({ success: status < 400, ...data }),
           });
+        if (method === "GET" && path.startsWith("/api/admin/customers/"))
+          return send({
+            data: {
+              id: path.split("/").pop(),
+              avatar_url: "https://res.cloudinary.com/test/customer.png",
+            },
+          });
+        if (method === "GET" && path.startsWith("/api/suppliers/admin/"))
+          return send({
+            data: {
+              id: path.split("/").pop(),
+              logo_url: "https://res.cloudinary.com/test/supplier.png",
+            },
+          });
         if (path === "/api/admin/me")
           return send({
             data: { id: "admin", permissions: ["support.manage"] },
@@ -249,6 +263,23 @@ const assert = require("node:assert/strict");
     await page
       .getByRole("textbox", { name: "رسالة الرد", exact: true })
       .waitFor();
+    await page.locator(".support-customer .support-avatar img").waitFor();
+    assert.equal(
+      await page
+        .locator(".support-customer .support-avatar img")
+        .getAttribute("src"),
+      "https://res.cloudinary.com/test/customer.png",
+    );
+    await page
+      .locator(
+        '.ticket-list-person img[src="https://res.cloudinary.com/test/supplier.png"]',
+      )
+      .first()
+      .waitFor();
+    assert.equal(
+      reads.filter((path) => path === "/api/admin/customers/customer-0").length,
+      1,
+    );
     assert(
       !(await page.getByLabel("تعيين التذكرة", { exact: true }).isDisabled()),
     );
