@@ -89,6 +89,16 @@ const { chromium } = require(
         m = req.method(),
         body = req.postDataJSON();
       if (m !== "GET") calls.push({ path, body });
+      if (path === "/api/payments/methods")
+        return send(r, {
+          methods: [
+            { code: "cash", label: "كاش", enabled: false },
+            { code: "mada", label: "مدى", enabled: true },
+            { code: "visa", label: "فيزا", enabled: true },
+          ],
+        });
+      if (path === "/api/admin/notifications")
+        return send(r, { items: [], unreadCount: 0 });
       if (path === "/api/orders/all")
         return send(
           r,

@@ -1,3 +1,5 @@
+import SupportIssueTypes from "./SupportIssueTypes";
+import { issueTypeRows } from "./support-issue-types";
 import SupportAvatar from "./SupportAvatar";
 import React, { useEffect, useState } from "react";
 import { Search, Plus, ArrowRight, RefreshCw } from "lucide-react";
@@ -29,6 +31,23 @@ export default function Support({ onSessionExpired }) {
     [period, setPeriod] = useState({}),
     [dates, setDates] = useState({ from: "", to: "" }),
     [dateError, setDateError] = useState("");
+  const publicTypes = useAdminResource(
+    "/api/support-tickets/categories",
+    revision,
+  );
+  let publicRows = [],
+    publicError = null;
+  if (publicTypes.data) {
+    try {
+      publicRows = issueTypeRows(publicTypes.data);
+    } catch (error) {
+      publicError = error;
+    }
+  }
+  const typeNames = {
+    ...categories,
+    ...Object.fromEntries(publicRows.map((row) => [row.code, row.name])),
+  };
   const resource = useAdminResource(
       ticketsPath({
         search: query,
@@ -133,28 +152,22 @@ export default function Support({ onSessionExpired }) {
         </div>
       </div>
       {types ? (
-        <section className="support-types">
-          <h2>الأنواع الواردة في التذاكر</h2>
-          <p className="support-api-note">
-            دي الأنواع اللي ظهرت في التذاكر اللي تم تحميلها. إضافة وتعديل وحذف
-            الأنواع غير متاحين حاليًا.
-          </p>
-          <div className="support-type-chips">
-            {Object.entries(categories).map(([code, name]) => (
-              <span key={code}>
-                <b>{name}</b>
-              </span>
-            ))}
-          </div>
-          {!Object.keys(categories).length && (
-            <p className="support-api-note">لا توجد أنواع محمّلة.</p>
-          )}
-          <button className="pricing-primary" disabled>
-            إضافة نوع مشكلة
-          </button>
-        </section>
+        <SupportIssueTypes
+          publicResource={
+            publicError ? { ...publicTypes, error: publicError } : publicTypes
+          }
+          revision={revision}
+          onChanged={() => setRevision((n) => n + 1)}
+          onSessionExpired={onSessionExpired}
+        />
       ) : (
         <>
+          <ResourceState
+            resource={
+              publicError ? { ...publicTypes, error: publicError } : publicTypes
+            }
+            onLogin={onSessionExpired}
+          />
           <div className="support-list-filters">
             <label>
               مصدر التذكرة
@@ -194,7 +207,7 @@ export default function Support({ onSessionExpired }) {
                 onChange={(e) => filter(setCategory, e.target.value)}
               >
                 <option value="">كل الأنواع</option>
-                {Object.entries(categories).map(([code, name]) => (
+                {Object.entries(typeNames).map(([code, name]) => (
                   <option key={code} value={code}>
                     {name}
                   </option>

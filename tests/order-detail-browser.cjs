@@ -75,6 +75,14 @@ const assert = require("node:assert/strict");
         method = request.method(),
         body = request.postDataJSON();
       if (method !== "GET") writes.push({ path, method, body });
+      if (path === "/api/payments/methods")
+        return send(route, {
+          methods: [
+            { code: "cash", label: "كاش", enabled: false },
+            { code: "mada", label: "مدى", enabled: true },
+            { code: "visa", label: "فيزا", enabled: true },
+          ],
+        });
       if (path === "/api/orders/all")
         return send(route, [{ ...order, customer_name: "عميل" }], {
           total: 1,

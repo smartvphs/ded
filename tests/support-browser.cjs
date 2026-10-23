@@ -133,6 +133,24 @@ const assert = require("node:assert/strict");
               logo_url: "https://res.cloudinary.com/test/supplier.png",
             },
           });
+        if (path === "/api/support-tickets/categories")
+          return send({
+            data: [{ id: "type1", code: "technical", name: "مشكلة تقنية" }],
+          });
+        if (path === "/api/support-tickets/admin/categories")
+          return send({
+            data: {
+              items: [
+                {
+                  id: "type1",
+                  code: "technical",
+                  name: "مشكلة تقنية",
+                  is_active: true,
+                  tickets_count: 0,
+                },
+              ],
+            },
+          });
         if (path === "/api/admin/me")
           return send({
             data: { id: "admin", permissions: ["support.manage"] },
@@ -434,21 +452,28 @@ const assert = require("node:assert/strict");
     await page.getByLabel("تصفية أولوية التذاكر").selectOption("");
     await page.getByLabel("التذاكر من تاريخ").fill("2026-10-01");
     await page.getByLabel("التذاكر إلى تاريخ").fill("2026-10-22");
-    await page
-      .getByRole("button", { name: "تطبيق الفترة", exact: true })
-      .click();
-    await page.waitForResponse((r) => r.url().includes("from=2026-10-01"));
+    await Promise.all([
+      page.waitForResponse((r) => r.url().includes("from=2026-10-01")),
+      page.getByRole("button", { name: "تطبيق الفترة", exact: true }).click(),
+    ]);
     assert(reads.some((p) => p.includes("to=2026-10-22")));
     await page
       .getByRole("button", { name: "أنواع المشكلة", exact: true })
       .click();
     await page
-      .getByRole("heading", { name: "الأنواع الواردة في التذاكر", exact: true })
+      .locator(".support-types")
+      .getByRole("heading", {
+        name: "أنواع مشكلات تذاكر المساعدة",
+        exact: true,
+      })
+      .waitFor();
+    await page
+      .getByLabel("تعديل نوع المشكلة مشكلة تقنية", { exact: true })
       .waitFor();
     assert(
-      await page
+      !(await page
         .getByRole("button", { name: "إضافة نوع مشكلة", exact: true })
-        .isDisabled(),
+        .isDisabled()),
     );
     await page
       .getByRole("button", { name: "تذاكر المساعدة", exact: true })

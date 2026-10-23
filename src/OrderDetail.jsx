@@ -1,3 +1,4 @@
+import { availableOrderPaymentMethods } from "./order-list-api";
 import React, { useEffect, useState, useRef } from "react";
 import {
   Plus,
@@ -494,7 +495,7 @@ export function OrderDetail({
   create = false,
   initialTab = "details",
   onBack,
-  backLabel="الطلبات",
+  backLabel = "الطلبات",
   onSessionExpired,
 }) {
   const resource = useAdminResource(
@@ -528,6 +529,21 @@ export function OrderDetail({
     data.order_type !== "service" &&
     !Number(data.wallet_amount || 0) &&
     !["paid", "captured", "refunded"].includes(data.payment_status);
+  const paymentResource = useAdminResource(
+    editing && canEditPayment ? "/api/payments/methods" : null,
+  );
+  let paymentOptions = [],
+    paymentError = null;
+  if (paymentResource.data) {
+    try {
+      paymentOptions = availableOrderPaymentMethods(paymentResource.data);
+    } catch (error) {
+      paymentError = error;
+    }
+  }
+  const paymentState = paymentError
+    ? { ...paymentResource, error: paymentError }
+    : paymentResource;
   function updateItem(id, key, value) {
     changeData({
       ...data,
@@ -587,6 +603,13 @@ export function OrderDetail({
     let shipping;
     try {
       shipping = shippingBody(data, original);
+      if (
+        data.payment_method !== original.payment_method &&
+        (paymentState.loading ||
+          paymentState.error ||
+          !paymentOptions.some((method) => method.code === data.payment_method))
+      )
+        throw new Error("اختر وسيلة دفع متاحة من الخادم أولًا.");
       for (const item of items) orderItemQuantity(item.quantity);
     } catch (e) {
       setNotice(e.message);
@@ -1019,7 +1042,12 @@ export function OrderDetail({
                         label="طريقة الدفع"
                         icon={FileText}
                         value={data.payment_method || "cash"}
-                        disabled={busy || !canEditPayment}
+                        disabled={
+                          busy ||
+                          !canEditPayment ||
+                          paymentState.loading ||
+                          !!paymentState.error
+                        }
                         onChange={(e) =>
                           changeData({
                             ...data,
@@ -1027,29 +1055,33 @@ export function OrderDetail({
                           })
                         }
                       >
-                        {Object.entries({
-                          ...payments,
-                          visa: "Visa",
-                          mastercard: "Mastercard",
-                        })
-                          .filter(
-                            ([key]) =>
-                              [
-                                "cash",
-                                "mada",
-                                "visa",
-                                "mastercard",
-                                "apple_pay",
-                                "tabby",
-                                "tamara",
-                              ].includes(key) || key === data.payment_method,
-                          )
-                          .map(([key, label]) => (
-                            <option key={key} value={key}>
-                              {label}
-                            </option>
-                          ))}
+                        {!paymentOptions.some(
+                          (method) => method.code === data.payment_method,
+                        ) && (
+                          <option value={data.payment_method} disabled>
+                            {payments[data.payment_method] ||
+                              data.payment_method ||
+                              "اختر وسيلة الدفع"}
+                            {data.payment_method &&
+                            canEditPayment &&
+                            paymentResource.data &&
+                            !paymentState.error
+                              ? " — غير متاحة حاليًا"
+                              : ""}
+                          </option>
+                        )}
+                        {paymentOptions.map((method) => (
+                          <option key={method.code} value={method.code}>
+                            {method.label}
+                          </option>
+                        ))}
                       </Select>
+                      {canEditPayment && (
+                        <ResourceState
+                          resource={paymentState}
+                          onLogin={onSessionExpired}
+                        />
+                      )}
                       <Field label="كود الخصم" icon={Flame}>
                         <input
                           aria-label="كود خصم الطلب"

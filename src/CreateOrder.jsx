@@ -12,7 +12,10 @@ import {
 import useAdminResource from "./use-admin-resource";
 import { adminRequest, queryString } from "./admin-api";
 import { addressBody } from "./customer-address";
-import { createOrderBody } from "./order-list-api";
+import {
+  createOrderBody,
+  availableOrderPaymentMethods,
+} from "./order-list-api";
 import {
   Panel,
   Field,
@@ -40,6 +43,7 @@ export default function CreateOrder({ onBack, onCreated, onSessionExpired }) {
     [quantity, setQuantity] = useState("1"),
     [items, setItems] = useState([]),
     [couponCode, setCouponCode] = useState(""),
+    [paymentMethod, setPaymentMethod] = useState(""),
     [adminNotes, setAdminNotes] = useState(""),
     [notice, setNotice] = useState(""),
     [busy, setBusy] = useState(false),
@@ -76,6 +80,23 @@ export default function CreateOrder({ onBack, onCreated, onSessionExpired }) {
   const product = useAdminResource(
     productId ? "/api/products/admin/" + encodeURIComponent(productId) : null,
   );
+  const paymentResource = useAdminResource("/api/payments/methods");
+  let paymentOptions = [],
+    paymentError = null;
+  if (paymentResource.data) {
+    try {
+      paymentOptions = availableOrderPaymentMethods(paymentResource.data);
+    } catch (error) {
+      paymentError = error;
+    }
+  }
+  const paymentState = paymentError
+    ? { ...paymentResource, error: paymentError }
+    : paymentResource;
+  useEffect(() => {
+    if (!paymentOptions.some((method) => method.code === paymentMethod))
+      setPaymentMethod(paymentOptions[0]?.code || "");
+  }, [paymentResource.data, paymentMethod]);
   const customerRows = Array.isArray(customers.data?.data)
       ? customers.data.data
       : [],
@@ -154,13 +175,19 @@ export default function CreateOrder({ onBack, onCreated, onSessionExpired }) {
       return setNotice("أضف عنوان توصيل للعميل أولًا.");
     if (addressId && !addresses.some((a) => a.id === addressId))
       return setNotice("اختر عنوانًا من عناوين العميل الحالي.");
+    if (
+      paymentState.loading ||
+      paymentState.error ||
+      !paymentOptions.some((method) => method.code === paymentMethod)
+    )
+      return setNotice("اختر وسيلة دفع متاحة من الخادم أولًا.");
     let body;
     try {
       body = createOrderBody({
         userId,
         addressId,
         items,
-        paymentMethod: "cash",
+        paymentMethod,
         couponCode,
         adminNotes,
       });
@@ -186,7 +213,9 @@ export default function CreateOrder({ onBack, onCreated, onSessionExpired }) {
     } catch (error) {
       if (!error.status || error.status >= 500) uncertainCreate.current = true;
       setNotice(
-        error.message +
+        (error.validationErrors?.length
+          ? error.validationErrors.map((item) => item.message).join("، ")
+          : error.message) +
           (uncertainCreate.current
             ? " راجع قائمة الطلبات قبل إعادة الإنشاء لتجنب التكرار."
             : ""),
@@ -310,12 +339,34 @@ export default function CreateOrder({ onBack, onCreated, onSessionExpired }) {
                   </option>
                 ))}
               </Select>
-              <Select label="وسيلة الدفع" value="cash" onChange={() => {}}>
-                <option value="cash">كاش</option>
+              <Select
+                label="وسيلة الدفع"
+                value={paymentMethod}
+                onChange={(event) => setPaymentMethod(event.target.value)}
+                disabled={
+                  paymentState.loading ||
+                  !!paymentState.error ||
+                  !paymentOptions.length
+                }
+              >
+                <option value="">اختر وسيلة الدفع</option>
+                {paymentOptions.map((method) => (
+                  <option key={method.code} value={method.code}>
+                    {method.label}
+                  </option>
+                ))}
               </Select>
             </div>
             <ResourceState resource={customers} onLogin={onSessionExpired} />
             <ResourceState resource={customer} onLogin={onSessionExpired} />
+            <ResourceState resource={paymentState} onLogin={onSessionExpired} />
+            {paymentResource.data &&
+              !paymentState.error &&
+              !paymentOptions.length && (
+                <p className="op-notice" role="alert">
+                  لا توجد وسيلة دفع مفعّلة لإنشاء الطلب حاليًا.
+                </p>
+              )}
             {addressReady && !addresses.length && (
               <p className="op-notice" role="status">
                 العميل ليس لديه عنوان توصيل. أضف عنوانًا لإكمال الطلب.
@@ -500,6 +551,9 @@ export default function CreateOrder({ onBack, onCreated, onSessionExpired }) {
                 busy ||
                 addressBusy ||
                 !items.length ||
+                paymentState.loading ||
+                !!paymentState.error ||
+                !paymentMethod ||
                 !addressReady ||
                 !addresses.length
               }
