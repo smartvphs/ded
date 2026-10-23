@@ -230,7 +230,7 @@ const assert = require("node:assert/strict");
             to: u.searchParams.get("to") || stats.period.to,
           },
         });
-      if (path === "/api/car-makes/admin") return send([]);
+      if (path === "/api/cars/admin/makes") return send([]);
       if (path === "/api/suppliers/quality-tiers") return send([]);
       if (path === "/api/suppliers/admin/price-lists/l1/items/i1") {
         priceItems[0].product_id = body.productId;

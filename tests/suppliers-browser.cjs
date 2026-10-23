@@ -117,7 +117,7 @@ const fs = require("node:fs");
             data: { items: [], unreadCount: 0 },
             meta: { total: 0 },
           });
-        if (p === "/api/car-makes/admin") return send({ data: makes });
+        if (p === "/api/cars/admin/makes") return send({ data: makes });
         if (p === "/api/suppliers/quality-tiers")
           return send({
             data: [

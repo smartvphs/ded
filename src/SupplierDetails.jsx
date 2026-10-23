@@ -258,7 +258,7 @@ function Fact({ icon, label, value }) {
 }
 function SupplierBasic({ row, onEdit, onSessionExpired }) {
   const [image, setImage] = useState(false);
-  const makes = useAdminResource("/api/car-makes/admin"),
+  const makes = useAdminResource("/api/cars/admin/makes"),
     quality = useAdminResource("/api/suppliers/quality-tiers");
   const m = Array.isArray(makes.data?.data)
       ? makes.data.data

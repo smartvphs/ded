@@ -44,7 +44,7 @@ const assert = require("node:assert/strict");
             meta: { total: 0 },
           });
         if (
-          p === "/api/car-makes/admin" ||
+          p === "/api/cars/admin/makes" ||
           p === "/api/suppliers/quality-tiers"
         )
           return send({ data: [] });

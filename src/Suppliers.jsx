@@ -79,7 +79,7 @@ export default function Suppliers({ onSessionExpired }) {
       "/api/suppliers/admin?limit=100&offset=0",
       revision,
     ),
-    makes = useAdminResource("/api/car-makes/admin");
+    makes = useAdminResource("/api/cars/admin/makes");
   const rows = resource.data?.data?.items || [],
     data = global.data?.data,
     counts = data?.countsByStatus || {},

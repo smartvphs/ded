@@ -55,7 +55,7 @@ function SupplierEditorForm({ supplier, onClose, onSaved }) {
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
     [unknown, setUnknown] = useState(false);
-  const makes = useAdminResource("/api/car-makes/admin"),
+  const makes = useAdminResource("/api/cars/admin/makes"),
     quality = useAdminResource("/api/suppliers/quality-tiers");
   const makeItems = Array.isArray(makes.data?.data)
     ? makes.data.data
