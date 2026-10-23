@@ -9,3 +9,7 @@ The audit and backend request from 8022354 describe available/missing API contra
 ## Subsequent user request
 
 The user then requested integration on the original UI. Settings is now connected without changing its seven-tab layout, artwork or stylesheet; see settings-original-ui-integration-2026-10-23.md for exact coverage and remaining contract clarifications. The restoration status of the separate support/cost additions remains unchanged.
+
+## Subsequent completion of support/cost controls
+
+The user explicitly requested frontend integration within the restored design. Ticket assignment/priority/internal notes/deletion and manual/missing costs are now connected through existing controls and matching dialogs, without a management panel, additional order columns or a permanent financial table. See ticket-cost-controls-integration-2026-10-23.md.

@@ -200,8 +200,21 @@ const assert = require("node:assert/strict");
         }
         return send(route, { sent: true });
       }
+      if (path === "/api/admin/me")
+        return send(route, { id: "admin", permissions: ["orders.manage"] });
       throw new Error("Unexpected " + method + " " + path);
     });
+    await page.route("**/api/admin/notifications?*", (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: { items: [], unreadCount: 0 },
+          meta: { total: 0 },
+        }),
+      }),
+    );
     await page.goto(
       (process.env.TEST_BASE_URL || "http://127.0.0.1:5188") + "/#orders",
     );
@@ -307,12 +320,24 @@ const assert = require("node:assert/strict");
       writes.filter((x) => x.path.endsWith("/invoice/send")).length,
       2,
     );
-    await page.getByRole("main").getByRole("button", {name:"الطلبات", exact:true}).click();
-    await page.getByRole("button", {name:"إجراءات ORD-TEST", exact:true}).click();
-    await page.getByRole("button", {name:"الفاتورة والشحن", exact:true}).click();
-    await page.getByText("INV-1", {exact:true}).waitFor();
-    await page.setViewportSize({width:390,height:844});
-    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+    await page
+      .getByRole("main")
+      .getByRole("button", { name: "الطلبات", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "إجراءات ORD-TEST", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "الفاتورة والشحن", exact: true })
+      .click();
+    await page.getByText("INV-1", { exact: true }).waitFor();
+    await page.setViewportSize({ width: 390, height: 844 });
+    assert.equal(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth > innerWidth,
+      ),
+      false,
+    );
     assert.deepEqual(errors, []);
     console.log(
       "PASS: order quantities validation/retry, real variant item add/delete, car snapshots, supported transitions, shipping persistence/retry, server profit/partial costs and invoice notification retry.",

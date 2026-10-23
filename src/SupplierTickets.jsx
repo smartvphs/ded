@@ -1,3 +1,5 @@
+import useTicketAdministration from "./use-ticket-administration";
+import TicketAdminDialog, { TicketAssignment } from "./TicketAdminDialog";
 import React, { useEffect, useState } from "react";
 import { adminRequest } from "./admin-api";
 import useAdminResource from "./use-admin-resource";
@@ -191,13 +193,21 @@ function SupplierThread({ id, supplier, onSessionExpired, onBusy, onChanged }) {
       revision,
     ),
     row = resource.data?.data;
+  const administration = useTicketAdministration({
+    row,
+    onUpdated: () => {
+      setRevision((n) => n + 1);
+      onChanged();
+    },
+    onDeleted: onChanged,
+  });
   useEffect(() => {
-    onBusy(busy);
+    onBusy(busy || administration.busy);
     return () => onBusy(false);
-  }, [busy]);
+  }, [busy, administration.busy]);
   async function send(e) {
     e.preventDefault();
-    if (busy || uncertain) return;
+    if (busy || administration.busy || uncertain) return;
     setBusy(true);
     setError("");
     try {
@@ -326,9 +336,18 @@ function SupplierThread({ id, supplier, onSessionExpired, onBusy, onChanged }) {
             <div className="su-internal-note">
               <span>ملاحظة داخلية</span>
               <textarea
-                disabled
+                readOnly
+                disabled={busy || administration.busy}
+                onClick={() => administration.open("notes")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    administration.open("notes");
+                  }
+                }}
+                value={row.internal_notes?.at(-1)?.body || ""}
                 aria-label="ملاحظة داخلية"
-                placeholder="الملاحظات الداخلية غير متاحة حاليًا."
+                placeholder="اضغط لإضافة أو مراجعة الملاحظات الداخلية"
               />
             </div>
             <form className="su-chat-form" onSubmit={send}>
@@ -337,13 +356,21 @@ function SupplierThread({ id, supplier, onSessionExpired, onBusy, onChanged }) {
                 value={reply}
                 onChange={(e) => setReply(e.target.value)}
                 disabled={
-                  busy || !!record || uncertain || row.status === "closed"
+                  busy ||
+                  administration.busy ||
+                  !!record ||
+                  uncertain ||
+                  row.status === "closed"
                 }
                 aria-label="رسالة الرد"
               />
               <button
                 disabled={
-                  busy || uncertain || !reply.trim() || row.status === "closed"
+                  busy ||
+                  administration.busy ||
+                  uncertain ||
+                  !reply.trim() ||
+                  row.status === "closed"
                 }
                 aria-label={record ? "إعادة التحقق من الرد" : "إرسال الرد"}
               >
@@ -362,23 +389,51 @@ function SupplierThread({ id, supplier, onSessionExpired, onBusy, onChanged }) {
             )}
           </section>
           <SupplierPanel title="إجراءات سريعة">
+            <SupplierField label="الموظف المسؤول">
+              <TicketAssignment
+                admin={administration}
+                row={row}
+                disabled={busy || administration.busy}
+              />
+            </SupplierField>
             <div className="su-ticket-quick">
-              <button disabled>رفع الأولوية القصوى</button>
               <button
-                disabled={busy || row.status === "closed"}
+                disabled={
+                  busy || administration.busy || !administration.canManage
+                }
+                onClick={() =>
+                  administration.open("priority", { priority: "urgent" })
+                }
+              >
+                رفع الأولوية القصوى
+              </button>
+              <button
+                disabled={
+                  busy || administration.busy || row.status === "closed"
+                }
                 onClick={() => setAction("closed")}
               >
                 إغلاق التذكرة
               </button>
               <button
-                disabled={busy || row.status !== "closed"}
+                disabled={
+                  busy || administration.busy || row.status !== "closed"
+                }
                 onClick={() => setAction("in_progress")}
               >
                 إعادة فتح
               </button>
-              <button disabled>حذف التذكرة</button>
+              <button
+                disabled={
+                  busy || administration.busy || !administration.canManage
+                }
+                onClick={() => administration.open("delete")}
+              >
+                حذف التذكرة
+              </button>
             </div>
           </SupplierPanel>
+          <TicketAdminDialog admin={administration} supplier />
           {action && (
             <SupplierModal
               title="تأكيد تغيير حالة التذكرة"

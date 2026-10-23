@@ -1,3 +1,4 @@
+import MissingCostsDialog from "./MissingCostsDialog";
 import React, { useState } from "react";
 import {
   Coins,
@@ -118,6 +119,7 @@ function Breakdown({ title, data, fields, extra }) {
   );
 }
 export default function FinancialReport({ onSessionExpired }) {
+  const [missingCosts, setMissingCosts] = useState(false);
   const [period, setPeriod] = useState(() => {
       const { from, to } = periodQuery("month");
       return { from, to };
@@ -279,6 +281,16 @@ export default function FinancialReport({ onSessionExpired }) {
       <Feedback mutation={exporting} />
       <ResourceState resource={financial} onLogin={onSessionExpired} />
       <ResourceState resource={performance} onLogin={onSessionExpired} />
+      {missingCosts && (
+        <MissingCostsDialog
+          key={period.from + period.to}
+          period={period}
+          account={account}
+          onSessionExpired={onSessionExpired}
+          onClose={() => setMissingCosts(false)}
+          onChanged={() => setRevision((n) => n + 1)}
+        />
+      )}
       {partial && (
         <div className="finance-partial" role="note">
           <b>الربح المعروض جزئي.</b> محسوب للمبيعات اللي تكلفتها مسجلة؛ المبيعات
@@ -288,7 +300,14 @@ export default function FinancialReport({ onSessionExpired }) {
               f?.profit?.unknownMarginSales ?? k?.profit?.unknownMarginSales
             }
           />{" "}
-          مش داخلة في الربح.
+          مش داخلة في الربح.{" "}
+          <button
+            className="pricing-back"
+            type="button"
+            onClick={() => setMissingCosts(true)}
+          >
+            مراجعة التكاليف الناقصة
+          </button>
         </div>
       )}
       <section className="finance-balances">

@@ -1,3 +1,4 @@
+import ManualItemCost from "./ManualItemCost";
 import React, { useEffect, useState } from "react";
 import { adminRequest } from "./admin-api";
 import useAdminResource from "./use-admin-resource";
@@ -5,6 +6,12 @@ import { Panel, Money, ResourceState } from "./orders-ui";
 export default function OrderCosts({ id, onSessionExpired, onSaved }) {
   const resource = useAdminResource(
     "/api/orders/admin/" + encodeURIComponent(id) + "/costs",
+  );
+  const me = useAdminResource("/api/admin/me"),
+    [itemEditor, setItemEditor] = useState(null);
+  const canEdit = !!(
+    me.data?.data?.isSuperAdmin ||
+    me.data?.data?.permissions?.includes("orders.manage")
   );
   const [draft, setDraft] = useState({}),
     [busy, setBusy] = useState(false),
@@ -20,7 +27,7 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
       });
   }, [resource.data]);
   async function save() {
-    if (busy) return;
+    if (busy || !canEdit) return;
     setNotice("");
     const body = {};
     for (const key of Object.keys(draft))
@@ -45,7 +52,11 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
       const fresh = await adminRequest(
         "/api/orders/admin/" + encodeURIComponent(id) + "/costs",
       );
-      if (Object.entries(body).some(([key, value]) => Number(fresh.data?.summary?.[key]) !== value))
+      if (
+        Object.entries(body).some(
+          ([key, value]) => Number(fresh.data?.summary?.[key]) !== value,
+        )
+      )
         throw new Error("تعذر تأكيد التكاليف المحفوظة.");
       resource.reload();
       await onSaved?.();
@@ -58,6 +69,19 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
   }
   return (
     <>
+      {itemEditor && (
+        <ManualItemCost
+          orderId={id}
+          itemId={itemEditor.id}
+          unitCost={itemEditor.unitCost}
+          productName={itemEditor.productName}
+          onClose={() => setItemEditor(null)}
+          onSaved={async () => {
+            resource.reload();
+            await onSaved?.();
+          }}
+        />
+      )}
       <ResourceState resource={resource} onLogin={onSessionExpired} />
       {notice && (
         <p role="status" className="op-notice">
@@ -94,7 +118,20 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
                         <Money value={row.unitPrice} />
                       </td>
                       <td>
-                        <Money value={row.unitCost} />
+                        {canEdit && row.source !== "service" ? (
+                          <button
+                            className="op-link"
+                            type="button"
+                            title="تعديل تكلفة الوحدة — للتقرير المحاسبي فقط"
+                            aria-label={"تعديل تكلفة " + row.productName}
+                            onClick={() => setItemEditor(row)}
+                          >
+                            <Money value={row.unitCost} />
+                            {row.unitCost == null ? " تسجيل التكلفة" : ""}
+                          </button>
+                        ) : (
+                          <Money value={row.unitCost} />
+                        )}
                       </td>
                       <td>
                         <Money value={row.lineTotal} />
@@ -144,7 +181,7 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
                     ) ? (
                       <input
                         aria-label={label}
-                        disabled={busy}
+                        disabled={busy || !canEdit}
                         type="number"
                         min="0"
                         step=".01"
@@ -168,7 +205,7 @@ export default function OrderCosts({ id, onSessionExpired, onSaved }) {
             </dl>
             <button
               className="op-primary op-wide"
-              disabled={busy}
+              disabled={busy || !canEdit}
               onClick={save}
             >
               حفظ و تحديث التقرير

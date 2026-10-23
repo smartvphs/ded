@@ -1,3 +1,5 @@
+import useTicketAdministration from "./use-ticket-administration";
+import TicketAdminDialog, { TicketAssignment } from "./TicketAdminDialog";
 import React, { useEffect, useState } from "react";
 import { Send, RefreshCw } from "lucide-react";
 import { adminRequest } from "./admin-api";
@@ -47,8 +49,20 @@ export default function SupportTicket({
     [statusCommitted, setStatusCommitted] = useState(false),
     reply = useMutation(),
     statusMutation = useMutation();
+  const administration = useTicketAdministration({
+    row: resource.data,
+    onUpdated: (fresh) => {
+      setResource({ loading: false, data: fresh, error: null });
+      onChanged();
+    },
+    onDeleted: () => {
+      setResource({ loading: false, data: null, error: null });
+      onChanged();
+    },
+  });
   const row = resource.data,
-    busy = reply.busy || statusMutation.busy || uploading;
+    busy =
+      reply.busy || statusMutation.busy || uploading || administration.busy;
   useEffect(() => {
     onBusyChange(busy);
     return () => onBusyChange(false);
@@ -164,9 +178,11 @@ export default function SupportTicket({
                 </option>
               ))}
             </select>
-            <select aria-label="تعيين التذكرة" disabled>
-              <option>تعيين الموظف غير متاح حاليًا</option>
-            </select>
+            <TicketAssignment
+              admin={administration}
+              row={row}
+              disabled={busy}
+            />
             <button className="pricing-back" disabled={busy} onClick={refresh}>
               <RefreshCw size={14} />
               تحديث
@@ -320,7 +336,13 @@ export default function SupportTicket({
           <section className="support-quick-actions">
             <h2>إجراءات سريعة</h2>
             <div>
-              <button className="escalate" disabled title="غير متاح حاليًا">
+              <button
+                className="escalate"
+                disabled={busy || !administration.canManage}
+                onClick={() =>
+                  administration.open("priority", { priority: "urgent" })
+                }
+              >
                 رفع الأولوية للمشرف
               </button>
               <button
@@ -345,26 +367,26 @@ export default function SupportTicket({
               </button>
               <button
                 className="delete-ticket"
-                disabled
-                title="غير متاح حاليًا"
+                disabled={busy || !administration.canManage}
+                onClick={() => administration.open("delete")}
               >
                 حذف التذكرة
               </button>
               <button
                 className="internal-note"
-                disabled
-                title="غير متاح حاليًا"
+                disabled={busy}
+                onClick={() => administration.open("notes")}
               >
                 إضافة ملاحظة داخلية
               </button>
             </div>
             <p className="support-api-note">
-              تعيين الموظف وتغيير الأولوية والملاحظات الداخلية والحذف غير متاحين
-              حاليًا.
+              الملاحظات الداخلية للإدارة فقط، ولا تظهر في محادثة العميل.
             </p>
           </section>
         </>
       )}
+      <TicketAdminDialog admin={administration} />
       {statusAction && (
         <PricingDialog
           title="تغيير حالة التذكرة"

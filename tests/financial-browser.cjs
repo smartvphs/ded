@@ -63,6 +63,14 @@ const assert = require("node:assert/strict");
           to: u.searchParams.get("to"),
           timezone: "Asia/Riyadh",
         };
+        if (path === "/api/admin/reports/missing-costs")
+          return send({
+            data: {
+              items: [],
+              pagination: { total: 0, limit: 10, offset: 0 },
+              totalSales: 0,
+            },
+          });
         if (path === "/api/admin/reports/financial/export") {
           if (failExport) {
             failExport = false;
@@ -191,7 +199,17 @@ const assert = require("node:assert/strict");
         throw new Error("Unexpected endpoint " + path);
       },
     );
-    await page.route('**/api/admin/notifications?*', r => r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({success:true,data:{items:[],unreadCount:0},meta:{total:0}})}));
+    await page.route("**/api/admin/notifications?*", (r) =>
+      r.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          success: true,
+          data: { items: [], unreadCount: 0 },
+          meta: { total: 0 },
+        }),
+      }),
+    );
     await page.goto(
       (process.env.TEST_BASE_URL || "http://127.0.0.1:5189") + "/#finance",
     );
@@ -210,6 +228,17 @@ const assert = require("node:assert/strict");
     assert((await netCard.innerText()).includes("200"));
     assert(!(await netCard.innerText()).includes("233"));
     await page.getByText("الربح المعروض جزئي.", { exact: true }).waitFor();
+    await page
+      .getByRole("button", { name: "مراجعة التكاليف الناقصة", exact: true })
+      .click();
+    await page
+      .getByText("لا توجد مبيعات بتكاليف ناقصة خلال الفترة.", { exact: true })
+      .waitFor();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "إغلاق", exact: true })
+      .click();
+
     assert(
       (await page.locator(".finance-partial").innerText()).includes("300"),
     );
