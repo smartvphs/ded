@@ -4,6 +4,12 @@ export const settingKeys = {
   offerMargin: ["offer_target_margin_percent"],
   normalFee: ["pricing_fee_normal"],
   expressFee: ["pricing_fee_express"],
+  freePartsLimit: ["pricing_free_parts_limit"],
+  cashbackMax: ["cashback_max_per_order"],
+  fulfillmentHours: ["supplier_fulfillment_hours"],
+  freeSla: ["sla_free_hours_max"],
+  normalSla: ["sla_normal_minutes_max"],
+  expressSla: ["sla_express_minutes_max"],
   cashbackPercent: ["cashback_percent"],
   tabbyFee: ["payment_fee_tabby_percent"],
   tamaraFee: ["payment_fee_tamara_percent"],
@@ -131,4 +137,11 @@ export function verifySettings(payload, body) {
     )
       throw new Error("لم يتم تأكيد حفظ الإعدادات؛ أعد التحقق.");
   return rows;
+}
+
+export function hoursInput(value, unit) {
+  return value === "" ? "" : String(Number(value) / (unit === "يوم" ? 24 : 1));
+}
+export function storedHours(value, unit) {
+  return value === "" ? "" : String(Number(value) * (unit === "يوم" ? 24 : 1));
 }

@@ -30,6 +30,7 @@ import {
 } from "./settings-context";
 import { adminRequest } from "./admin-api";
 import SettingsMessages from "./SettingsMessages";
+import { hoursInput, storedHours } from "./settings-bindings";
 
 function Art({ name, className = "", label }) {
   const [file, x, y, w, h] = settingsArtwork[name];
@@ -151,7 +152,11 @@ function UploadArea({ label }) {
 }
 function PricingSettings() {
   const normal = useSetting("رسوم التسعير العادي", "normalFee"),
-    express = useSetting("رسوم التسعير السريع", "expressFee");
+    express = useSetting("رسوم التسعير السريع", "expressFee"),
+    freeLimit = useSetting("عدد القطع المجانية", "freePartsLimit"),
+    freeSla = useSetting("مهلة التسعير المجاني بالساعات", "freeSla"),
+    normalSla = useSetting("مهلة التسعير العادي بالدقائق", "normalSla"),
+    expressSla = useSetting("مهلة التسعير السريع بالدقائق", "expressSla");
   return (
     <div className="st-pricing">
       {[0, 1, 2].map((index) => (
@@ -197,7 +202,16 @@ function PricingSettings() {
                 }
               </p>
               <span>
-                <History size={16} />—
+                <History size={16} />
+                {
+                  [
+                    freeSla.value ? "حتى " + freeSla.value + " ساعة" : "—",
+                    normalSla.value ? "حتى " + normalSla.value + " دقيقة" : "—",
+                    expressSla.value
+                      ? "حتى " + expressSla.value + " دقيقة"
+                      : "—",
+                  ][index]
+                }
               </span>
             </div>
             <Switch
@@ -238,6 +252,7 @@ function PricingSettings() {
           <div className="st-grid two st-tiers">
             <Field
               label="حد الشريحة الأولى (قطع)"
+              binding={index === 0 ? "freePartsLimit" : undefined}
               context={["تسعير مجاني", "تسعير عادي", "تسعير سريع"][index]}
               suffix="قطعة"
               className="st-piece-field"
@@ -255,7 +270,15 @@ function PricingSettings() {
               suffix="قطعة"
               className="st-piece-field"
               trailing={
-                <span className="st-range">من {index ? "6" : "4"} إلى</span>
+                <span className="st-range">
+                  من{" "}
+                  {index
+                    ? "—"
+                    : freeLimit.value !== ""
+                      ? Number(freeLimit.value) + 1
+                      : "—"}{" "}
+                  إلى
+                </span>
               }
             />
             <Field
@@ -636,7 +659,12 @@ function CashbackSettings() {
           icon="rate"
           suffix="%"
         />
-        <Field label="حد أعلى الكاش باك" icon="rate" suffix="ريال" />
+        <Field
+          label="حد أعلى الكاش باك"
+          binding="cashbackMax"
+          icon="rate"
+          suffix="ريال"
+        />
       </div>
     </Panel>
   );
@@ -652,7 +680,8 @@ const workDays = [
 ];
 function PreparationSettings() {
   const setting = useSetting("ساعات العمل"),
-    unitSetting = useSetting("وحدة وقت التجهيز");
+    fulfillment = useSetting("مهلة تجهيز الطلب بالساعات", "fulfillmentHours");
+  const [unit, setUnit] = useState("ساعة");
   let days = null;
   try {
     const value = JSON.parse(setting.value);
@@ -670,10 +699,7 @@ function PreparationSettings() {
     )
       days = value;
   } catch {}
-  const unit = ["ساعة", "يوم"].includes(unitSetting.value)
-      ? unitSetting.value
-      : "ساعة",
-    disabled = setting.disabled || !days;
+  const disabled = setting.disabled || !days;
   const changeDay = (index, key, value) => {
     if (!disabled)
       setting.change(
@@ -747,6 +773,12 @@ function PreparationSettings() {
             icon="preparationClock"
             placeholder="مثال:24"
             type="number"
+            local={{
+              value: hoursInput(fulfillment.value, unit),
+              disabled: fulfillment.disabled,
+              title: fulfillment.title,
+              change: (value) => fulfillment.change(storedHours(value, unit)),
+            }}
           />
           <ChevronsUpDown className="st-time-step" size={30} />
           <div className="st-unit">
@@ -756,14 +788,11 @@ function PreparationSettings() {
                 <button
                   key={value}
                   type="button"
-                  aria-pressed={unitSetting.value === value}
-                  disabled={
-                    unitSetting.disabled ||
-                    !["ساعة", "يوم"].includes(unitSetting.value)
-                  }
-                  title={unitSetting.title}
+                  aria-pressed={unit === value}
+                  disabled={fulfillment.disabled}
+                  title={fulfillment.title}
                   className={unit === value ? "active" : ""}
-                  onClick={() => unitSetting.change(value)}
+                  onClick={() => setUnit(value)}
                 >
                   {value}
                 </button>

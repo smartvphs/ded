@@ -1,0 +1,551 @@
+{
+  "success": true,
+  "message": "Success",
+  "data": {
+    "groups": [
+      {
+        "key": "margins",
+        "label": "الهوامش والعمولات",
+        "settings": [
+          {
+            "key": "platform_margin_percent",
+            "label": "هامش المنصة على الخدمات",
+            "value": 20,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": "يغيّر سعر كل الخدمات المعروضة فورًا",
+            "defaultValue": null,
+            "description": "نسبة ربح المنصة على أسعار الموردين",
+            "isMissing": false
+          },
+          {
+            "key": "supplier_commission_free",
+            "label": "عمولة المنصة على التسعير المجاني",
+            "value": 1,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": null,
+            "defaultValue": null,
+            "description": "نسبة عمولة المورد على التسعير المجاني %",
+            "isMissing": false
+          },
+          {
+            "key": "supplier_commission_normal",
+            "label": "عمولة المنصة على التسعير العادي",
+            "value": 3,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": null,
+            "defaultValue": null,
+            "description": "نسبة عمولة المورد على التسعير العادي %",
+            "isMissing": false
+          },
+          {
+            "key": "supplier_commission_express",
+            "label": "عمولة المنصة على التسعير السريع",
+            "value": 5,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": null,
+            "defaultValue": null,
+            "description": "نسبة عمولة المورد على التسعير السريع %",
+            "isMissing": false
+          },
+          {
+            "key": "payment_fee_moyasar_percent",
+            "label": "رسوم ميسر (احتياطي لو العملية من غير رسوم مسجّلة)",
+            "value": null,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": "بتأثر على رقم الأرباح في الرئيسية بس",
+            "defaultValue": null,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "payment_fee_tabby_percent",
+            "label": "رسوم تابي (حسب العقد)",
+            "value": null,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": "بتأثر على رقم الأرباح في الرئيسية بس",
+            "defaultValue": null,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "payment_fee_tamara_percent",
+            "label": "رسوم تمارا (حسب العقد)",
+            "value": null,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": "بتأثر على رقم الأرباح في الرئيسية بس",
+            "defaultValue": null,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "vat_percent",
+            "label": "ضريبة القيمة المضافة",
+            "value": 15,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": "يغيّر إجمالي كل طلب جديد",
+            "defaultValue": null,
+            "description": "نسبة ضريبة القيمة المضافة %",
+            "isMissing": false
+          }
+        ]
+      },
+      {
+        "key": "pricing",
+        "label": "رسوم التسعير",
+        "settings": [
+          {
+            "key": "pricing_fee_normal",
+            "label": "رسوم التسعير العادي",
+            "value": 1,
+            "type": "money",
+            "min": 0,
+            "max": 1000,
+            "impact": null,
+            "defaultValue": null,
+            "description": "رسوم التسعير العادي بالريال",
+            "isMissing": false
+          },
+          {
+            "key": "pricing_fee_express",
+            "label": "رسوم التسعير السريع",
+            "value": 3,
+            "type": "money",
+            "min": 0,
+            "max": 1000,
+            "impact": null,
+            "defaultValue": null,
+            "description": "رسوم التسعير السريع بالريال",
+            "isMissing": false
+          },
+          {
+            "key": "pricing_free_parts_limit",
+            "label": "عدد القطع المجانية",
+            "value": 3,
+            "type": "integer",
+            "min": 0,
+            "max": 100,
+            "impact": null,
+            "defaultValue": null,
+            "description": "عدد القطع المجانية في التسعير المجاني",
+            "isMissing": false
+          },
+          {
+            "key": "pricing_extra_parts_fee",
+            "label": "رسوم كل مجموعة قطع إضافية",
+            "value": 1,
+            "type": "money",
+            "min": 0,
+            "max": 1000,
+            "impact": null,
+            "defaultValue": null,
+            "description": "رسوم كل مجموعة قطع إضافية في التسعير المجاني",
+            "isMissing": false
+          },
+          {
+            "key": "used_parts_group_size",
+            "label": "عدد القطع في مجموعة التشليح",
+            "value": 5,
+            "type": "integer",
+            "min": 1,
+            "max": 100,
+            "impact": null,
+            "defaultValue": null,
+            "description": "عدد القطع في المجموعة الواحدة لطلبات التشليح",
+            "isMissing": false
+          },
+          {
+            "key": "used_parts_group_fee",
+            "label": "رسوم كل مجموعة تشليح",
+            "value": 3,
+            "type": "money",
+            "min": 0,
+            "max": 1000,
+            "impact": null,
+            "defaultValue": null,
+            "description": "رسوم كل مجموعة قطع في طلبات التشليح",
+            "isMissing": false
+          }
+        ]
+      },
+      {
+        "key": "sla",
+        "label": "المهل والغرامات",
+        "settings": [
+          {
+            "key": "sla_normal_minutes_max",
+            "label": "مهلة التسعير العادي بالدقائق",
+            "value": 120,
+            "type": "integer",
+            "min": 1,
+            "max": 10080,
+            "impact": null,
+            "defaultValue": null,
+            "description": "أقصى مدة رد للتسعير العادي بالدقائق",
+            "isMissing": false
+          },
+          {
+            "key": "sla_express_minutes_max",
+            "label": "مهلة التسعير السريع بالدقائق",
+            "value": 30,
+            "type": "integer",
+            "min": 1,
+            "max": 10080,
+            "impact": null,
+            "defaultValue": null,
+            "description": "أقصى مدة رد للتسعير السريع بالدقائق",
+            "isMissing": false
+          },
+          {
+            "key": "sla_free_hours_max",
+            "label": "مهلة التسعير المجاني بالساعات",
+            "value": 48,
+            "type": "integer",
+            "min": 1,
+            "max": 720,
+            "impact": null,
+            "defaultValue": null,
+            "description": "أقصى مدة رد للتسعير المجاني بالساعات",
+            "isMissing": false
+          },
+          {
+            "key": "supplier_fulfillment_hours",
+            "label": "مهلة تجهيز الطلب بالساعات",
+            "value": 24,
+            "type": "integer",
+            "min": 1,
+            "max": 720,
+            "impact": null,
+            "defaultValue": null,
+            "description": "مهلة تجهيز الطلب بعد قبول العرض بالساعات",
+            "isMissing": false
+          },
+          {
+            "key": "late_fulfillment_penalty_percent",
+            "label": "غرامة تأخير التجهيز",
+            "value": 0,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": "صفر يعني الغرامة معطّلة - التأخير يُسجَّل بدون خصم",
+            "defaultValue": null,
+            "description": "نسبة غرامة تأخير التجهيز من قيمة العرض",
+            "isMissing": false
+          }
+        ]
+      },
+      {
+        "key": "shipping",
+        "label": "الشحن",
+        "settings": [
+          {
+            "key": "standard_shipping_fee",
+            "label": "رسوم التوصيل العادي",
+            "value": 35,
+            "type": "money",
+            "min": 0,
+            "max": 10000,
+            "impact": null,
+            "defaultValue": null,
+            "description": "رسوم التوصيل العادي بالريال",
+            "isMissing": false
+          },
+          {
+            "key": "express_shipping_fee",
+            "label": "رسوم الشحن السريع",
+            "value": 40,
+            "type": "money",
+            "min": 0,
+            "max": 10000,
+            "impact": null,
+            "defaultValue": null,
+            "description": "رسوم الشحن السريع - نفس اليوم، لما المورد والعميل في نفس المدينة",
+            "isMissing": false
+          }
+        ]
+      },
+      {
+        "key": "cashback",
+        "label": "الكاش باك",
+        "settings": [
+          {
+            "key": "cashback_percent",
+            "label": "نسبة الكاش باك العامة",
+            "value": 0,
+            "type": "percent",
+            "min": 0,
+            "max": 100,
+            "impact": "بتتطبق على الطلبات الجديدة لكل العملاء اللي مالهمش نسبة خاصة",
+            "defaultValue": null,
+            "description": "نسبة الكاش باك العامة لكل العملاء",
+            "isMissing": false
+          },
+          {
+            "key": "cashback_validity_days",
+            "label": "مدة صلاحية الكاش باك (أيام)",
+            "value": 180,
+            "type": "integer",
+            "min": 1,
+            "max": 3650,
+            "impact": "بتتطبق على الكاش باك الجديد بس - المضاف قبل كده محتفظ بتاريخ انتهائه",
+            "defaultValue": null,
+            "description": "مدة صلاحية رصيد الكاش باك بالأيام",
+            "isMissing": false
+          },
+          {
+            "key": "cashback_max_per_order",
+            "label": "أقصى كاش باك للطلب الواحد (صفر = بلا حد)",
+            "value": 0,
+            "type": "money",
+            "min": 0,
+            "max": 100000,
+            "impact": null,
+            "defaultValue": null,
+            "description": "أقصى كاش باك للطلب الواحد - صفر يعني بلا حد",
+            "isMissing": false
+          }
+        ]
+      },
+      {
+        "key": "inventory",
+        "label": "المخزون",
+        "settings": [
+          {
+            "key": "low_stock_threshold",
+            "label": "حد تنبيه المخزون المنخفض (صفر = بدون تنبيه)",
+            "value": null,
+            "type": "integer",
+            "min": 0,
+            "max": 100000,
+            "impact": "فريق الكتالوج بيتبلّغ لما مخزون منتج ينزل للحد ده أو أقل مع طلب جديد",
+            "defaultValue": null,
+            "description": null,
+            "isMissing": true
+          }
+        ]
+      },
+      {
+        "key": "home",
+        "label": "أقسام الرئيسية",
+        "settings": [
+          {
+            "key": "home_section_banners",
+            "label": "إظهار قسم البانرات في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_car_make_shortcuts",
+            "label": "إظهار قسم اختصارات الماركات في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_success_partners",
+            "label": "إظهار قسم شركاء النجاح في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_featured_categories",
+            "label": "إظهار قسم الأقسام المميزة في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_recent_purchases",
+            "label": "إظهار قسم آخر مشتريات العملاء في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_testimonials",
+            "label": "إظهار قسم تعليقات العملاء في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_platform_features",
+            "label": "إظهار قسم لماذا منصتنا في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_todays_offers",
+            "label": "إظهار قسم عروض اليوم في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_recently_added",
+            "label": "إظهار قسم أضيف حديثًا في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_best_selling",
+            "label": "إظهار قسم الأكثر مبيعًا في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_suitable_parts",
+            "label": "إظهار قسم قطع مناسبة لسيارتك في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_section_counters",
+            "label": "إظهار قسم أرقامنا في الرئيسية",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي القسم كله في الرئيسية خلال 30 ثانية",
+            "defaultValue": 1,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_testimonials_manual",
+            "label": "إظهار التعليقات اليدوية (الوهمية) في تعليقات العملاء",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "التعليقات اللي الأدمن ضافها بإيده بتظهر قبل تعليقات المشترين في الرئيسية",
+            "defaultValue": 0,
+            "description": null,
+            "isMissing": true
+          },
+          {
+            "key": "home_purchases_manual",
+            "label": "إظهار المشتريات اليدوية (الوهمية) في آخر مشتريات العملاء",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "المشتريات اللي الأدمن ضافها بإيده بتظهر قبل الطلبات الحقيقية في الرئيسية",
+            "defaultValue": 0,
+            "description": null,
+            "isMissing": true
+          }
+        ]
+      },
+      {
+        "key": "payments",
+        "label": "الدفع",
+        "settings": [
+          {
+            "key": "cash_on_delivery_enabled",
+            "label": "تفعيل الدفع عند الاستلام (كاش)",
+            "value": null,
+            "type": "boolean",
+            "min": 0,
+            "max": 1,
+            "impact": "بيظهر/يخفي الدفع عند الاستلام في شاشة الدفع، والطلب الجديد بالكاش بيترفض لما يكون مقفول",
+            "defaultValue": 0,
+            "description": null,
+            "isMissing": true
+          }
+        ]
+      }
+    ],
+    "unknown": [
+      {
+        "key": "offer_target_margin_percent",
+        "value": "20",
+        "description": "نسبة الربح المستهدفة على العروض الحصرية %",
+        "isReadOnly": true
+      },
+      {
+        "key": "pricing_fee_free",
+        "value": "0",
+        "description": "رسوم التسعير المجاني",
+        "isReadOnly": true
+      }
+    ],
+    "currency": "SAR"
+  }
+}

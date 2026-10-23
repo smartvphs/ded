@@ -130,3 +130,43 @@ test("context prevents crossing repeated fields or payment providers", () => {
     null,
   );
 });
+
+test("confirmed full-response fields and hour/day conversion retain backend units", async () => {
+  const { hoursInput, storedHours } = await import(
+    "data:text/javascript;base64," + Buffer.from(source).toString("base64")
+  );
+  const fixture = JSON.parse(
+    await readFile(
+      new URL("./fixtures/settings-response-2026-10-23.json", import.meta.url),
+      "utf8",
+    ),
+  );
+  const rows = settingsRows(fixture);
+  assert.equal(
+    resolveSetting(rows, { binding: "cashbackMax" }).key,
+    "cashback_max_per_order",
+  );
+  assert.equal(
+    inputValue(resolveSetting(rows, { binding: "cashbackMax" })),
+    "0",
+  );
+  assert.equal(resolveSetting(rows, { binding: "freePartsLimit" }).value, 3);
+  assert.equal(resolveSetting(rows, { binding: "fulfillmentHours" }).value, 24);
+  assert.equal(
+    resolveSetting(rows, {
+      label: "نسبة ربح المورد",
+      context: "التسعير المجاني",
+    }),
+    null,
+  );
+  assert.equal(hoursInput("24", "يوم"), "1");
+  assert.equal(storedHours("2", "يوم"), "48");
+  assert.equal(storedHours("", "يوم"), "");
+  assert.equal(hoursInput("0", "يوم"), "0");
+  assert.throws(() =>
+    typedValue(
+      resolveSetting(rows, { binding: "fulfillmentHours" }),
+      storedHours("0.01", "يوم"),
+    ),
+  );
+});
