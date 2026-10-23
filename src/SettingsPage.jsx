@@ -29,6 +29,7 @@ import {
   useSettingsController,
 } from "./settings-context";
 import { adminRequest } from "./admin-api";
+import SiteLocationDialog from "./SiteLocationDialog";
 import SettingsMessages from "./SettingsMessages";
 import { hoursInput, storedHours } from "./settings-bindings";
 
@@ -175,7 +176,7 @@ function PricingSettings() {
                   key={label}
                   label={label}
                   binding={
-                    [undefined, "offerMargin", "serviceMargin"][
+                    ["pricingMargin", "offerMargin", "serviceMargin"][
                       [
                         "نسبة ربح المنصة على التسعيرات",
                         "نسبة ربح المنصة على العروض",
@@ -215,6 +216,9 @@ function PricingSettings() {
               </span>
             </div>
             <Switch
+              binding={
+                ["freeEnabled", "normalEnabled", "expressEnabled"][index]
+              }
               label={
                 [
                   "تفعيل التسعير المجاني",
@@ -233,7 +237,7 @@ function PricingSettings() {
           {index !== 0 && (
             <Field
               label="نسبة ربح المورد"
-              context={index === 1 ? "التسعير العادي" : "التسعير السريع"}
+              binding={index === 1 ? "normalCommission" : "expressCommission"}
               icon="supplier"
               suffix="%"
             />
@@ -244,7 +248,7 @@ function PricingSettings() {
           {index === 0 && (
             <Field
               label="نسبة ربح المورد"
-              context="التسعير المجاني"
+              binding="freeCommission"
               icon="supplier"
               suffix="%"
             />
@@ -522,6 +526,9 @@ function PaymentSettings() {
   );
 }
 function ContactSettings() {
+  const [location, setLocation] = useState(null),
+    contactLocation = useSetting("موقع التواصل"),
+    warehouseLocation = useSetting("موقع المستودع");
   const phoneSetting = useSetting("أرقام التواصل"),
     emailSetting = useSetting("البريد الإلكتروني");
   const readList = (state) => {
@@ -547,6 +554,13 @@ function ContactSettings() {
   });
   return (
     <div className="st-contact-fields">
+      {location && (
+        <SiteLocationDialog
+          value={JSON.parse(location.value)}
+          onClose={() => setLocation(null)}
+          onSave={(value) => location.change(JSON.stringify(value))}
+        />
+      )}
       <section className="st-contact-card">
         <h2>أرقام التواصل</h2>
         {(phones || ["", ""]).map((phone, id) => (
@@ -620,10 +634,19 @@ function ContactSettings() {
             icon="location"
             trailing={
               <button
-                disabled
+                disabled={
+                  (label === "المستودع *" ? warehouseLocation : contactLocation)
+                    .disabled
+                }
+                onClick={() =>
+                  setLocation(
+                    label === "المستودع *"
+                      ? warehouseLocation
+                      : contactLocation,
+                  )
+                }
                 type="button"
                 className="st-location-button"
-                title="اختيار الموقع غير موثق في واجهة الإعدادات الحالية."
                 aria-label={"تحديد " + label}
               >
                 <Art name="locationButton" />
@@ -652,7 +675,12 @@ function CashbackSettings() {
   return (
     <Panel className="st-cashback">
       <div className="st-grid three">
-        <Field label="حد أدنى للطلب" icon="rate" value="150" suffix="ريال" />
+        <Field
+          label="حد أدنى للطلب"
+          binding="cashbackMin"
+          icon="rate"
+          suffix="ريال"
+        />
         <Field
           label="نسبة الكاش باك"
           binding="cashbackPercent"

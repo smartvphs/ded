@@ -84,3 +84,4 @@ test("pricing export loads all filtered pages, validates responses and refuses p
   globalThis.pricingRequest = async () => ({ data: {}, meta: { total: 0 } });
   await assert.rejects(() => allPricingRows({}));
 });
+test('Saudi hour filter accompanies its date and preserves inclusive minute',()=>{const q=pricingParams({filters:{date:'2026-10-23',time:'09:00-09:59'}});assert.equal(q.fromTime,'09:00');assert.equal(q.toTime,'09:59');assert.equal(q.from,'2026-10-23');assert.equal(pricingParams({filters:{time:'09:00-09:59'}}).fromTime,undefined);});

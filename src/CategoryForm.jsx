@@ -28,7 +28,7 @@ export default function CategoryForm({ config, onClose, onSaved }) {
     nameEn: row.name_en ?? "",
     description: row.description ?? "",
     descriptionEn: row.description_en ?? "",
-    image: row.icon_url ?? row.logo_url ?? row.imageUrl ?? "",
+    image: row.icon_url ?? row.logo_url ?? row.image_url ?? row.imageUrl ?? "",
     sortOrder: row.sort_order ?? row.sortOrder ?? 0,
     modelId: row.model_id ?? models[0]?.id ?? "",
     yearFrom: row.year_from ?? "",
@@ -107,7 +107,11 @@ export default function CategoryForm({ config, onClose, onSaved }) {
       if (file) {
         const image = await uploadContentImage(
           await readImage(file),
-          type === "make" ? "cars" : type === "brand" ? "brands" : "categories",
+          type === "make" || type === "model"
+            ? "cars"
+            : type === "brand"
+              ? "brands"
+              : "categories",
         );
         set("image", image);
         setFile(null);
@@ -115,7 +119,8 @@ export default function CategoryForm({ config, onClose, onSaved }) {
       }
       if (type === "category") body.iconUrl = imageUrl || null;
       if (type === "make" || type === "brand") body.logoUrl = imageUrl || null;
-      if (type === "option") body.imageUrl = imageUrl || null;
+      if (type === "option" || type === "model")
+        body.imageUrl = imageUrl || null;
       const target =
         type === "variant" && method === "POST"
           ? "/api/cars/admin/models/" +
@@ -248,7 +253,7 @@ export default function CategoryForm({ config, onClose, onSaved }) {
               )}
             </>
           )}
-          {["category", "make", "brand", "option"].includes(type) && (
+          {["category", "make", "brand", "option", "model"].includes(type) && (
             <label className="cm-field">
               <span>الصورة</span>
               {draft.image && (

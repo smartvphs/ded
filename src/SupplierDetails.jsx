@@ -23,6 +23,7 @@ import {
   SupplierBalance,
   SupplierInvoice,
 } from "./SupplierForms";
+import SupplierAccountAction from "./SupplierAccountAction";
 import SupplierTickets from "./SupplierTickets";
 import PricingDetails from "./PricingDetails";
 const date = (v) =>
@@ -41,12 +42,18 @@ export default function SupplierDetails({ id, onBack, onSessionExpired }) {
       revision,
     ),
     row = resource.data?.data;
+  const stats = useAdminResource(
+    "/api/suppliers/admin/" + encodeURIComponent(id) + "/stats",
+    revision,
+  );
+  const metrics = stats.data?.data;
   const refresh = () => setRevision((n) => n + 1);
   return (
     <div className="su-page su-details">
       <ResourceState resource={resource} onLogin={onSessionExpired} />
       {row && (
         <>
+          <ResourceState resource={stats} onLogin={onSessionExpired} />
           <SupplierPanel className="su-detail-hero">
             <svg
               viewBox="55 149 1078 151"
@@ -79,18 +86,29 @@ export default function SupplierDetails({ id, onBack, onSessionExpired }) {
               </div>
               <div className="su-detail-actions">
                 <button
-                  disabled
-                  title="حذف المورد غير متاح حاليًا"
+                  onClick={() => setDialog("delete")}
+                  title="حذف المورد"
                   aria-label="حذف المورد"
                 >
                   <SupplierIcon name="trash" size={39} />
                 </button>
                 <SupplierButton
                   secondary
-                  disabled
-                  title="تغيير حالة المورد من قائمة الموردين"
+                  onClick={() => setDialog("account")}
+                  title="إيقاف أو إعادة تفعيل المورد"
                 >
-                  <SupplierBadge status={row.approval_status} />
+                  <SupplierBadge
+                    status={
+                      row.account_status === "suspended"
+                        ? "rejected"
+                        : row.account_status === "deleted"
+                          ? "inactive"
+                          : row.approval_status
+                    }
+                    label={
+                      row.account_status === "deleted" ? "محذوف" : undefined
+                    }
+                  />
                   <SupplierIcon name="chevron" size={13} />
                 </SupplierButton>
                 <SupplierButton onClick={() => setDialog("balance")}>
@@ -103,34 +121,36 @@ export default function SupplierDetails({ id, onBack, onSessionExpired }) {
             items={[
               {
                 label: "طلب تسعير أجاب عليه",
-                value: row.quotations_count,
+                value: metrics?.response?.quotations,
                 icon: "replied",
               },
               {
-                label: "طلب مؤكد",
-                value: row.confirmed_orders_count,
+                label: "تسعير مقبول",
+                value: metrics?.response?.accepted,
                 icon: "confirmed",
                 tint: "purple",
               },
               {
-                label: "معدل الاستجابة",
+                label: "نسبة قبول التسعيرات",
                 value:
-                  row.response_rate != null ? row.response_rate + "%" : null,
+                  metrics?.response?.acceptanceRate != null
+                    ? metrics.response.acceptanceRate + "%"
+                    : null,
                 icon: "response",
                 tint: "green",
               },
               {
                 label: "وقت الرد",
                 value:
-                  row.response_time_hours != null
-                    ? row.response_time_hours + " س"
+                  metrics?.response?.avgMinutes != null
+                    ? metrics.response.avgMinutes + " دقيقة"
                     : null,
                 icon: "duration",
                 tint: "pink",
               },
               {
                 label: "قيمة الطلبات المؤكدة",
-                value: row.confirmed_orders_total,
+                value: metrics?.earnings?.acceptedCustomerAmount,
                 icon: "amount",
                 tint: "yellow",
                 money: true,
@@ -170,6 +190,7 @@ export default function SupplierDetails({ id, onBack, onSessionExpired }) {
             <SupplierPricing id={id} onSessionExpired={onSessionExpired} />
           ) : tab === "finance" ? (
             <SupplierFinance
+              metrics={metrics}
               id={id}
               onSessionExpired={onSessionExpired}
               onInvoice={(value) => setDialog(value)}
@@ -178,6 +199,18 @@ export default function SupplierDetails({ id, onBack, onSessionExpired }) {
             <SupplierTickets
               supplier={row}
               onSessionExpired={onSessionExpired}
+            />
+          )}
+          {["delete", "account"].includes(dialog) && (
+            <SupplierAccountAction
+              supplier={row}
+              kind={dialog}
+              onClose={() => setDialog(null)}
+              onSaved={() => {
+                setDialog(null);
+                if (dialog === "delete") onBack();
+                else refresh();
+              }}
             />
           )}
           {dialog === "balance" && (
@@ -602,7 +635,7 @@ function SupplierPricing({ id, onSessionExpired }) {
     </>
   );
 }
-function SupplierFinance({ id, onSessionExpired, onInvoice }) {
+function SupplierFinance({ id, metrics, onSessionExpired, onInvoice }) {
   const [page, setPage] = useState(1);
   const wallet = useAdminResource(
       "/api/suppliers/admin/" + encodeURIComponent(id) + "/wallet",
@@ -630,7 +663,7 @@ function SupplierFinance({ id, onSessionExpired, onInvoice }) {
           items={[
             {
               label: "إجمالي أرباح التسعير",
-              value: null,
+              value: metrics?.earnings?.commissionsTotal,
               icon: "replied",
               money: true,
             },
@@ -641,8 +674,8 @@ function SupplierFinance({ id, onSessionExpired, onInvoice }) {
               money: true,
             },
             {
-              label: "إجمالي أرباح المنصة منه",
-              value: null,
+              label: "قيمة طلبات المورد المقبولة",
+              value: metrics?.earnings?.acceptedSupplierAmount,
               icon: "replied",
               money: true,
             },
@@ -668,7 +701,17 @@ function SupplierFinance({ id, onSessionExpired, onInvoice }) {
           </div>
         </SupplierPanel>
         <SupplierPanel title="توزيع الأرباح حسب النوع">
-          <SupplierDonut items={[]} total={null} label="" />
+          <SupplierDonut
+            items={(metrics?.earnings?.commissions || []).map((x) => ({
+              label:
+                { free: "مجاني", normal: "عادي", express: "سريع" }[
+                  x.pricingType
+                ] || x.pricingType,
+              value: Number(x.amount),
+            }))}
+            total={metrics?.earnings?.commissionsTotal}
+            label=""
+          />
           <div className="su-chart-legend">
             <span>
               <i />
@@ -691,10 +734,17 @@ function SupplierFinance({ id, onSessionExpired, onInvoice }) {
             ["مجاني", "blue"],
             ["عادي", "yellow"],
             ["سريع", "red"],
-          ].map(([label, color]) => (
+          ].map(([label, color], index) => (
             <div className={"su-profit-card " + color} key={label}>
               <strong>
-                <SupplierMoney value={null} />
+                <SupplierMoney
+                  value={
+                    metrics?.earnings?.commissions?.find(
+                      (x) =>
+                        x.pricingType === ["free", "normal", "express"][index],
+                    )?.amount
+                  }
+                />
               </strong>
               <span>تسعير {label}</span>
               <p>

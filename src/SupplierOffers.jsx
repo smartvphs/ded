@@ -1,3 +1,5 @@
+import SupplierPriceUpload from "./SupplierPriceUpload";
+import PriceListLink from "./PriceListLink";
 import React, { useEffect, useState } from "react";
 import useAdminResource from "./use-admin-resource";
 import { adminRequest, queryString } from "./admin-api";
@@ -31,6 +33,8 @@ export default function SupplierOffers({ onSessionExpired }) {
     [search, setSearch] = useState(""),
     [status, setStatus] = useState(""),
     [upload, setUpload] = useState(false),
+    [removeFile, setRemoveFile] = useState(null),
+    [deleteSent, setDeleteSent] = useState(false),
     [preview, setPreview] = useState(null),
     [cancel, setCancel] = useState(null),
     [revision, setRevision] = useState(0),
@@ -181,7 +185,14 @@ export default function SupplierOffers({ onSessionExpired }) {
                   >
                     <SupplierIcon name="eye" size={34} />
                   </button>
-                  <button disabled title="حذف ملفات العروض غير متاح حاليًا">
+                  <button
+                    aria-label={"حذف " + row.file_name}
+                    onClick={() => {
+                      setRemoveFile(row);
+                      setDeleteSent(false);
+                      setError("");
+                    }}
+                  >
                     <SupplierIcon name="trash" size={34} />
                   </button>
                 </div>
@@ -355,19 +366,70 @@ export default function SupplierOffers({ onSessionExpired }) {
         </>
       )}
       {upload && (
-        <SupplierModal
-          title="رفع ملف عروض أسعار"
-          small
+        <SupplierPriceUpload
           onClose={() => setUpload(false)}
+          onSaved={(id) => {
+            setUpload(false);
+            setRevision((n) => n + 1);
+            setDetail(id);
+          }}
+        />
+      )}
+      {removeFile && (
+        <SupplierModal
+          title="حذف ملف الأسعار"
+          busy={busy}
+          onClose={() => setRemoveFile(null)}
+          small
         >
-          <SupplierPanel>
-            <SupplierField label="ملف عروض الأسعار" icon="upload">
-              <input type="file" accept=".xlsx,.xls,.csv" disabled />
-            </SupplierField>
-            <p className="su-bank-note">
-              رفع ملف عروض أسعار بواسطة الإدارة غير متاح حاليًا.
+          <p>{removeFile.file_name}</p>
+          {error && (
+            <p className="su-error" role="alert">
+              {error}
             </p>
-          </SupplierPanel>
+          )}
+          <SupplierButton
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true);
+              setError("");
+              try {
+                if (!deleteSent) {
+                  try {
+                    await adminRequest(
+                      "/api/suppliers/admin/price-lists/" +
+                        encodeURIComponent(removeFile.id),
+                      { method: "DELETE" },
+                    );
+                    setDeleteSent(true);
+                  } catch (e) {
+                    if (!e.status || e.status >= 500) setDeleteSent(true);
+                    throw e;
+                  }
+                }
+                let absent = false;
+                try {
+                  await adminRequest(
+                    "/api/suppliers/admin/price-lists/" +
+                      encodeURIComponent(removeFile.id),
+                  );
+                } catch (e) {
+                  if (e.status === 404) absent = true;
+                  else throw e;
+                }
+                if (!absent)
+                  throw new Error("الملف ما زال موجودًا؛ أعد التحقق.");
+                setRemoveFile(null);
+                setRevision((n) => n + 1);
+              } catch (e) {
+                setError(e.message);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {deleteSent ? "إعادة التحقق" : "تأكيد الحذف"}
+          </SupplierButton>
         </SupplierModal>
       )}
       {preview && (
@@ -400,6 +462,7 @@ export default function SupplierOffers({ onSessionExpired }) {
   );
 }
 function SupplierOfferDetail({ id, onBack, onSessionExpired }) {
+  const [linkRow, setLinkRow] = useState(null);
   const [page, setPage] = useState(1),
     [comparison, setComparison] = useState(""),
     [selected, setSelected] = useState({}),
@@ -421,6 +484,17 @@ function SupplierOfferDetail({ id, onBack, onSessionExpired }) {
     file = resource.data?.data?.priceList;
   return (
     <div className="su-page">
+      {linkRow && (
+        <PriceListLink
+          listId={id}
+          row={linkRow}
+          onClose={() => setLinkRow(null)}
+          onSaved={() => {
+            setRevision((n) => n + 1);
+            setSelected({});
+          }}
+        />
+      )}
       <h1>عروض الأسعار</h1>
       {notice && (
         <p className="su-success" role="status">
@@ -563,7 +637,11 @@ function SupplierOfferDetail({ id, onBack, onSessionExpired }) {
                     عرض سريع
                   </SupplierButton>
                 ) : (
-                  <SupplierButton secondary disabled icon="add-product">
+                  <SupplierButton
+                    secondary
+                    onClick={() => setLinkRow(row)}
+                    icon="add-product"
+                  >
                     إضافة للمنتجات
                   </SupplierButton>
                 )}

@@ -136,6 +136,7 @@ export function confirmCatalogSave(type, row, body) {
           nameEn: "name_en",
           iconUrl: "icon_url",
           logoUrl: "logo_url",
+          imageUrl: "image_url",
           descriptionEn: "description_en",
           sortOrder: "sort_order",
           parentId: "parent_id",

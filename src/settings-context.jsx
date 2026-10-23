@@ -14,6 +14,7 @@ import {
   settingsPatch,
   verifySettings,
 } from "./settings-bindings";
+import { siteRows, siteBody, containsValues } from "./site-info-bindings";
 export const SettingsContext = createContext(null);
 export const SettingsScope = createContext("");
 export function useSetting(label, binding, context) {
@@ -45,23 +46,27 @@ export function useSetting(label, binding, context) {
 }
 export function useSettingsController() {
   const resource = useAdminResource("/api/admin/settings"),
-    me = useAdminResource("/api/admin/me");
+    me = useAdminResource("/api/admin/me"),
+    site = useAdminResource("/api/admin/site-info");
   const [draft, setDraft] = useState({}),
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [writeError, setWriteError] = useState(null),
-    [verified, setVerified] = useState(null);
+    [verified, setVerified] = useState(null),
+    [siteVerified, setSiteVerified] = useState(null);
   useEffect(() => {
     setVerified(null);
+    setSiteVerified(null);
   }, [resource.data]);
   const sections = useRef({}),
     pending = useRef(null),
     lock = useRef(false);
   let rows = [],
-    error = resource.error;
+    error = resource.error || site.error;
   try {
     if (verified) rows = verified;
     else if (resource.data) rows = settingsRows(resource.data);
+    if (site.data && !verified) rows = [...rows, ...siteRows(site.data)];
   } catch (e) {
     error = e;
   }
@@ -73,48 +78,82 @@ export function useSettingsController() {
     if (lock.current) return;
     setWriteError(null);
     setMessage("");
-    if (error || !resource.data || !canEdit) {
+    if (error || !resource.data || !site.data || !canEdit) {
       setWriteError(
         error || new Error("تعذر حفظ الإعدادات أو لا توجد صلاحية للتعديل."),
       );
       return;
     }
-    let body;
+    let plan;
     try {
-      body =
-        pending.current ||
-        settingsPatch(rows, draft, sections.current, section);
+      if (pending.current) plan = pending.current;
+      else {
+        const changed = settingsPatch(rows, draft, sections.current, section),
+          numeric = Object.fromEntries(
+            Object.entries(changed).filter(
+              ([key]) => !key.startsWith("__site_"),
+            ),
+          ),
+          siteValues = Object.fromEntries(
+            Object.entries(changed).filter(([key]) =>
+              key.startsWith("__site_"),
+            ),
+          );
+        plan = { ops: [], keys: Object.keys(changed) };
+        if (Object.keys(numeric).length)
+          plan.ops.push({ path: "/api/admin/settings", body: numeric });
+        if (Object.keys(siteValues).length)
+          plan.ops.push({
+            path: "/api/admin/site-info",
+            body: siteBody(siteVerified || site.data.data, siteValues),
+          });
+      }
     } catch (e) {
       setWriteError(e);
       return;
     }
-    if (!Object.keys(body).length) {
+    if (!plan.ops.length) {
       setMessage("لا توجد تغييرات قابلة للحفظ.");
       return;
     }
     lock.current = true;
     setBusy(true);
+    pending.current = plan;
     try {
-      if (!pending.current) {
-        try {
-          await adminRequest("/api/admin/settings", { method: "PATCH", body });
-          pending.current = body;
-        } catch (e) {
-          if (!e.status || e.status >= 500) pending.current = body;
-          throw e;
+      for (const op of plan.ops) {
+        if (op.done) continue;
+        if (!op.sent) {
+          try {
+            await adminRequest(op.path, { method: "PATCH", body: op.body });
+            op.sent = true;
+          } catch (e) {
+            if (!e.status || e.status >= 500) op.sent = true;
+            throw e;
+          }
         }
+        const fresh = await adminRequest(op.path);
+        if (op.path.endsWith("site-info")) {
+          if (!containsValues(fresh.data, op.body))
+            throw new Error("لم يتم تأكيد بيانات الموقع؛ أعد التحقق.");
+        } else verifySettings(fresh, op.body);
+        op.done = true;
       }
-      const fresh = await adminRequest("/api/admin/settings"),
-        next = verifySettings(fresh, body);
-      setVerified(next);
+      const [settingsResult, siteResult] = await Promise.all([
+        adminRequest("/api/admin/settings"),
+        adminRequest("/api/admin/site-info"),
+      ]);
+      setVerified([...settingsRows(settingsResult), ...siteRows(siteResult)]);
+      setSiteVerified(siteResult.data);
       setDraft((old) =>
         Object.fromEntries(
-          Object.entries(old).filter(([key]) => !Object.hasOwn(body, key)),
+          Object.entries(old).filter(([key]) => !plan.keys.includes(key)),
         ),
       );
       pending.current = null;
       setMessage("تم حفظ الإعدادات.");
     } catch (e) {
+      if ((e.status && e.status < 500) || plan.ops.every((x) => !x.sent))
+        pending.current = null;
       setWriteError(e);
     } finally {
       lock.current = false;
@@ -129,13 +168,16 @@ export function useSettingsController() {
     draft,
     busy,
     canEdit: canEdit && !pending.current,
-    loading: resource.loading,
+    loading: resource.loading || site.loading,
     error: error || me.error,
     writeError,
     message,
     pending: !!pending.current,
     save,
-    reload: resource.reload,
+    reload: () => {
+      resource.reload();
+      site.reload();
+    },
     change: (key, value, section) => {
       sections.current[key] = section;
       setDraft((old) => ({ ...old, [key]: value }));

@@ -19,8 +19,16 @@ import {
   text,
 } from "./supplier-ui";
 import { SupplierEditor, SupplierBalance } from "./SupplierForms";
+import useSupplierActivity from "./use-supplier-activity";
+import SupplierAccountAction from "./SupplierAccountAction";
 import SupplierDetails from "./SupplierDetails";
-const noFilter = { search: "", make: "", hours: "", balance: "" };
+const noFilter = {
+  search: "",
+  make: "",
+  hours: "",
+  balance: "",
+  accountStatus: "",
+};
 export default function Suppliers({ onSessionExpired }) {
   const [tab, setTab] = useState("all"),
     [filters, setFilters] = useState(noFilter),
@@ -40,7 +48,28 @@ export default function Suppliers({ onSessionExpired }) {
       "/api/suppliers/admin?" +
         queryString({
           search: applied.search,
-          approvalStatus: status,
+          approvalStatus: ["suspended", "active", "deleted"].includes(status)
+            ? undefined
+            : status,
+          accountStatus: ["suspended", "active", "deleted"].includes(status)
+            ? status
+            : applied.accountStatus,
+          ...(applied.hours
+            ? {
+                [applied.hours.startsWith("open")
+                  ? "openNow"
+                  : "receivingPricingNow"]: applied.hours.endsWith("yes")
+                  ? "true"
+                  : "false",
+              }
+            : {}),
+          ...(applied.balance === "positive"
+            ? { minBalance: 0.01 }
+            : applied.balance === "negative"
+              ? { maxBalance: -0.01 }
+              : applied.balance === "zero"
+                ? { minBalance: 0, maxBalance: 0 }
+                : {}),
           limit: 5,
           offset: (page - 1) * 5,
         }),
@@ -69,7 +98,7 @@ export default function Suppliers({ onSessionExpired }) {
   useEffect(() => {
     setSelected([]);
     setMenu(null);
-  }, [page, status, applied.search]);
+  }, [page, status, applied]);
   useEffect(() => {
     if (!menu) return;
     const close = (e) => {
@@ -232,14 +261,33 @@ export default function Suppliers({ onSessionExpired }) {
                   </select>
                 </SupplierField>
                 <SupplierField label="أوقات التسعير" icon="clock">
-                  <select disabled>
-                    <option>مثال: 9:00 صباحًا - 5:00 مساءً</option>
+                  <select
+                    value={filters.hours}
+                    onChange={(e) =>
+                      setFilters({ ...filters, hours: e.target.value })
+                    }
+                  >
+                    <option value="">كل الأوقات</option>
+                    <option value="pricing-yes">يستقبل التسعير الآن</option>
+                    <option value="pricing-no">لا يستقبل التسعير الآن</option>
+                    <option value="open-yes">مفتوح الآن</option>
+                    <option value="open-no">
+                      مغلق الآن أو لم تحدد مواعيده
+                    </option>
                   </select>
                 </SupplierField>
                 <div className="su-filter-balance">
                   <SupplierField label="الرصيد" icon="clock">
-                    <select disabled>
-                      <option>الكل</option>
+                    <select
+                      value={filters.balance}
+                      onChange={(e) =>
+                        setFilters({ ...filters, balance: e.target.value })
+                      }
+                    >
+                      <option value="">الكل</option>
+                      <option value="positive">رصيد موجب</option>
+                      <option value="negative">رصيد سالب</option>
+                      <option value="zero">رصيد صفر</option>
                     </select>
                   </SupplierField>
                 </div>
@@ -257,8 +305,12 @@ export default function Suppliers({ onSessionExpired }) {
               <div className="su-status-tabs">
                 {[
                   ["", "الكل", data?.total],
-                  ["approved", "نشط", counts.approved],
-                  ["rejected", "موقوف", counts.rejected],
+                  ["active", "نشط", data?.countsByAccountStatus?.active],
+                  [
+                    "suspended",
+                    "موقوف",
+                    data?.countsByAccountStatus?.suspended,
+                  ],
                   ["pending", "موردين جدد", counts.pending],
                 ].map(([key, label, count]) => (
                   <button
@@ -388,7 +440,20 @@ export default function Suppliers({ onSessionExpired }) {
                           : row.profit_percent + "%"}
                       </td>
                       <td>
-                        <SupplierBadge status={row.approval_status} />
+                        <SupplierBadge
+                          status={
+                            row.account_status === "suspended"
+                              ? "rejected"
+                              : row.account_status === "deleted"
+                                ? "inactive"
+                                : row.approval_status
+                          }
+                          label={
+                            row.account_status === "deleted"
+                              ? "محذوف"
+                              : undefined
+                          }
+                        />
                       </td>
                       <td>
                         <div className="su-row-actions">
@@ -511,19 +576,67 @@ export default function Suppliers({ onSessionExpired }) {
             <SupplierIcon name="edit" />
             تعديل البيانات
           </button>
-          <button role="menuitem" disabled>
+          <button
+            role="menuitem"
+            disabled={menu.row.account_status === "deleted"}
+            onClick={() => {
+              setDialog({ kind: "account", row: menu.row });
+              setMenu(null);
+            }}
+          >
             <SupplierIcon name="person" />
-            غير نشط
+            {menu.row.account_status === "suspended"
+              ? "إعادة تفعيل"
+              : "إيقاف المورد"}
           </button>
-          <button role="menuitem" disabled className="danger">
+          <button
+            role="menuitem"
+            disabled={menu.row.account_status === "deleted"}
+            className="danger"
+            onClick={() => {
+              setDialog({ kind: "delete", row: menu.row });
+              setMenu(null);
+            }}
+          >
             <SupplierIcon name="trash" />
             حذف المورد
           </button>
-          <button role="menuitem" disabled className="danger">
+          <button
+            role="menuitem"
+            disabled={menu.row.account_status === "deleted"}
+            className="danger"
+            onClick={() => {
+              setDialog({ kind: "account", row: menu.row });
+              setMenu(null);
+            }}
+          >
             <SupplierIcon name="reject" />
             حظر المورد
           </button>
+          <button
+            role="menuitem"
+            onClick={() => {
+              setStatus("deleted");
+              setPage(1);
+              setMenu(null);
+            }}
+          >
+            <SupplierIcon name="trash" />
+            عرض الموردين المحذوفين
+          </button>
         </div>
+      )}
+      {["account", "delete"].includes(dialog?.kind) && (
+        <SupplierAccountAction
+          supplier={dialog.row}
+          kind={dialog.kind}
+          onClose={() => setDialog(null)}
+          onSaved={() => {
+            if (dialog.kind === "delete") setStatus("deleted");
+            setDialog(null);
+            refresh();
+          }}
+        />
       )}
       {dialog?.kind === "add" && (
         <SupplierEditor
@@ -719,16 +832,29 @@ function SupplierAnalytics({ onSessionExpired, onOpen }) {
   );
 }
 function SupplierTimes() {
+  const activity = useSupplierActivity(),
+    hours = activity.data?.hours,
+    peak = hours?.length ? hours.indexOf(Math.max(...hours)) : null;
   return (
     <>
       <SupplierPanel title="تحليل أوقات التسعير" className="su-times-panel">
         <p className="su-heat-caption">
-          الأوقات الأكثر نشاطًا: <span>—</span>
+          الأوقات الأكثر نشاطًا:{" "}
+          <span>
+            {activity.data?.total > 0
+              ? String(peak).padStart(2, "0") + ":00 بتوقيت السعودية"
+              : "—"}
+          </span>
         </p>
         <div className="su-heatmap">
           {Array.from({ length: 24 }, (_, i) => (
             <div key={i}>
-              <b style={{ background: "#e3e8f1" }}>—</b>
+              <b
+                style={{ background: hours?.[i] > 0 ? "#00aa7b" : "#e3e8f1" }}
+                title={String(i).padStart(2, "0") + ":00"}
+              >
+                {hours?.[i] ?? "—"}
+              </b>
               <small>
                 {i % 3 === 0 ? String(i).padStart(2, "0") + ":00" : ""}
               </small>
@@ -753,7 +879,15 @@ function SupplierTimes() {
       <SupplierStats
         className="su-time-stats"
         items={[
-          { label: "متوسط وقت الرد", icon: "bolt", value: null, note: "—" },
+          {
+            label: "متوسط وقت الرد",
+            icon: "bolt",
+            value:
+              activity.data?.avgMinutes == null
+                ? null
+                : activity.data.avgMinutes.toFixed(1) + " دقيقة",
+            note: "آخر 30 يومًا",
+          },
           {
             label: "معدل الرد خلال 3 ساعات",
             icon: "fast",
@@ -778,7 +912,11 @@ function SupplierTimes() {
         ]}
       />
       <p className="su-inline-note">
-        بيانات أوقات استجابة الموردين غير متاحة حاليًا.
+        {activity.loading
+          ? "جارٍ تحميل نشاط الموردين…"
+          : activity.error
+            ? activity.error.message
+            : "النشاط مجمع من إحصائيات الموردين لنفس الفترة؛ نسبة الرد خلال 3 ساعات وعدد من لم يردوا غير متاحين في الرد الحالي."}
       </p>
     </>
   );

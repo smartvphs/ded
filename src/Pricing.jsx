@@ -23,7 +23,7 @@ import {
 import PricingDetails from "./PricingDetails";
 import "./pricing.css";
 import { PricingBadge, PricingField } from "./pricing-ui";
-const emptyFilters = { company: "", date: "", type: "", status: "" };
+const emptyFilters = { company: "", date: "", type: "", status: "", time: "" };
 export default function Pricing({ onSessionExpired }) {
   const [detail, setDetail] = useState(null),
     [selected, setSelected] = useState([]),
@@ -209,6 +209,11 @@ export default function Pricing({ onSessionExpired }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
+            if (filters.time && !filters.date) {
+              setNotice("اختر تاريخ الطلب مع فلتر الساعة بتوقيت السعودية.");
+              return;
+            }
+            setNotice("");
             setApplied({ ...filters });
             setPage(1);
             setSelected([]);
@@ -236,10 +241,19 @@ export default function Pricing({ onSessionExpired }) {
             <PricingField label="أوقات التسعير">
               <select
                 aria-label="أوقات التسعير"
-                disabled
-                title="فلتر الساعة غير موثق في مسار طلبات التسعير"
+                value={filters.time}
+                onChange={(e) => change("time", e.target.value)}
+                title="توقيت السعودية؛ يتطلب اختيار تاريخ"
               >
-                <option>جميع الأوقات</option>
+                <option value="">جميع الأوقات</option>
+                {Array.from({ length: 24 }, (_, i) => {
+                  const hour = String(i).padStart(2, "0");
+                  return (
+                    <option key={hour} value={hour + ":00-" + hour + ":59"}>
+                      {hour}:00 — {hour}:59
+                    </option>
+                  );
+                })}
               </select>
             </PricingField>
             <PricingField label="تاريخ الطلب">

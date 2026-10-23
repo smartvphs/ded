@@ -1,6 +1,9 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { adminRequest } from "./admin-api";
 import { uploadContentImage } from "./definitions-api";
+import { ResourceState } from "./orders-ui";
+import SupplierHours from "./SupplierHours";
+import { containsValues } from "./site-info-bindings";
 import useAdminResource from "./use-admin-resource";
 import {
   SupplierIcon,
@@ -12,8 +15,30 @@ import {
   SupplierModal,
   text,
 } from "./supplier-ui";
-export function SupplierEditor({ supplier, onClose, onSaved }) {
+export function SupplierEditor(props) {
+  const resource = useAdminResource(
+    props.supplier
+      ? "/api/suppliers/admin/" + encodeURIComponent(props.supplier.id)
+      : null,
+  );
+  if (props.supplier && !resource.data)
+    return (
+      <SupplierModal title="تعديل بيانات المورد" onClose={props.onClose}>
+        <ResourceState resource={resource} />
+      </SupplierModal>
+    );
+  return (
+    <SupplierEditorForm
+      {...props}
+      supplier={props.supplier ? resource.data.data : undefined}
+    />
+  );
+}
+function SupplierEditorForm({ supplier, onClose, onSaved }) {
   const editing = !!supplier;
+  const [hoursOpen, setHoursOpen] = useState(false),
+    [hours, setHours] = useState(null);
+  const committed = useRef(null);
   const [form, setForm] = useState({
       name: supplier?.name || "",
       contactName: supplier?.contact_name || "",
@@ -23,7 +48,8 @@ export function SupplierEditor({ supplier, onClose, onSaved }) {
       logoUrl: supplier?.logo_url || "",
       identityDocumentUrl: supplier?.identity_document_url || "",
       city: supplier?.city || "",
-      supportedMakeIds: supplier?.supported_make_ids || [],
+      supportedMakeIds:
+        supplier?.supported_make_ids || supplier?.supported_brands || [],
       supportedQualities: supplier?.supported_qualities || [],
     }),
     [busy, setBusy] = useState(false),
@@ -66,10 +92,84 @@ export function SupplierEditor({ supplier, onClose, onSaved }) {
   }
   async function submit(e) {
     e.preventDefault();
-    if (editing || busy || unknown) return;
+    if (busy || unknown) return;
     setBusy(true);
     setError("");
     try {
+      if (editing) {
+        let body = committed.current;
+        if (!body) {
+          const original = {
+            workingHours: supplier.working_hours ?? null,
+            pricingHours: supplier.pricing_hours ?? null,
+            name: supplier.name || "",
+            contactName: supplier.contact_name || "",
+            email: supplier.email || "",
+            address: supplier.address || "",
+            city: supplier.city || "",
+            logoUrl: supplier.logo_url || "",
+            identityDocumentUrl: supplier.identity_document_url || "",
+            supportedQualities: supplier.supported_qualities || [],
+            supportedBrands:
+              supplier.supported_make_ids || supplier.supported_brands || [],
+          };
+          const current = {
+            name: form.name.trim(),
+            contactName: form.contactName.trim(),
+            email: form.email.trim(),
+            address: form.address.trim(),
+            city: form.city.trim(),
+            logoUrl: form.logoUrl,
+            identityDocumentUrl: form.identityDocumentUrl,
+            supportedQualities: form.supportedQualities,
+            supportedBrands: form.supportedMakeIds,
+            ...hours,
+          };
+          body = Object.fromEntries(
+            Object.entries(current).filter(
+              ([key, value]) =>
+                JSON.stringify(value) !== JSON.stringify(original[key]),
+            ),
+          );
+          if (!Object.keys(body).length) {
+            onClose();
+            return;
+          }
+          try {
+            await adminRequest(
+              "/api/suppliers/admin/" + encodeURIComponent(supplier.id),
+              { method: "PATCH", body },
+            );
+            committed.current = body;
+          } catch (e) {
+            if (!e.status || e.status >= 500) committed.current = body;
+            throw e;
+          }
+        }
+        const result = await adminRequest(
+          "/api/suppliers/admin/" + encodeURIComponent(supplier.id),
+        );
+        const fieldMap = {
+          contactName: "contact_name",
+          logoUrl: "logo_url",
+          identityDocumentUrl: "identity_document_url",
+          supportedQualities: "supported_qualities",
+          supportedBrands: "supported_brands",
+          workingHours: "working_hours",
+          pricingHours: "pricing_hours",
+        };
+        for (const [key, value] of Object.entries(body)) {
+          const actual =
+            result.data?.[fieldMap[key] || key] ??
+            (key === "supportedBrands"
+              ? result.data?.supported_make_ids
+              : undefined);
+          if (!containsValues(actual, value))
+            throw new Error("تعذر تأكيد بيانات المورد؛ أعد التحقق.");
+        }
+        onSaved(supplier.id);
+        return;
+      }
       const result = await adminRequest("/api/suppliers/admin", {
         method: "POST",
         body: {
@@ -95,7 +195,7 @@ export function SupplierEditor({ supplier, onClose, onSaved }) {
       }
       onSaved(result.data.id);
     } catch (e) {
-      if (!e.status || e.status >= 500) setUnknown(true);
+      if (!editing && (!e.status || e.status >= 500)) setUnknown(true);
       setError(e.message);
     } finally {
       setBusy(false);
@@ -107,10 +207,21 @@ export function SupplierEditor({ supplier, onClose, onSaved }) {
       onClose={onClose}
       busy={busy}
     >
+      {hoursOpen && (
+        <SupplierHours
+          workingHours={hours?.workingHours ?? supplier?.working_hours}
+          pricingHours={hours?.pricingHours ?? supplier?.pricing_hours}
+          onClose={() => setHoursOpen(false)}
+          onSave={(value) => {
+            setHours(value);
+            setHoursOpen(false);
+          }}
+        />
+      )}
       <form onSubmit={submit}>
         <SupplierPanel title="المعلومات الشخصية">
           <fieldset
-            disabled={busy || editing || unknown}
+            disabled={busy || !!committed.current || unknown}
             className="su-form-fieldset"
           >
             <div className="su-fields">
@@ -141,6 +252,12 @@ export function SupplierEditor({ supplier, onClose, onSaved }) {
               <SupplierField label="رقم الجوال *" icon="phone">
                 <input
                   type="tel"
+                  disabled={editing}
+                  title={
+                    editing
+                      ? "المورد يغير رقم دخوله باستخدام OTP من التطبيق."
+                      : undefined
+                  }
                   required
                   dir="ltr"
                   value={form.phone}
@@ -228,13 +345,18 @@ export function SupplierEditor({ supplier, onClose, onSaved }) {
                 />
               </SupplierField>
               <SupplierField label="أوقات التسعير" icon="clock" wide>
-                <select disabled>
-                  <option>مثال: 9:00 صباحًا - 5:00 مساءً</option>
+                <select
+                  disabled={!editing}
+                  value=""
+                  onChange={() => setHoursOpen(true)}
+                >
+                  <option value="">مواعيد العمل واستقبال التسعير</option>
+                  <option value="edit">تعديل المواعيد</option>
                 </select>
               </SupplierField>
             </div>
             <p className="su-bank-note">
-              أوقات التسعير غير متاحة للتعديل حاليًا.
+              المواعيد بتوقيت السعودية؛ تُحفظ مع زر حفظ التعديلات.
             </p>
             <p className="su-muted" style={{ margin: "20px 0 8px" }}>
               الجودات المتاحة
@@ -302,9 +424,7 @@ export function SupplierEditor({ supplier, onClose, onSaved }) {
           <p className="su-bank-note">
             المورد يضيف بياناته البنكية من حسابه في التطبيق.
           </p>
-          {editing && (
-            <p className="su-bank-note">تعديل بيانات المورد غير متاح حاليًا.</p>
-          )}
+
           {error && (
             <p className="su-error" role="alert">
               {error}
@@ -317,11 +437,15 @@ export function SupplierEditor({ supplier, onClose, onSaved }) {
           )}
           <button
             className="su-button full"
-            disabled={busy || editing || unknown}
+            disabled={busy || unknown}
             type="submit"
           >
             <SupplierIcon name="plus" size={20} />
-            {editing ? "حفظ التعديلات" : "إضافة مورد جديد"}
+            {committed.current
+              ? "إعادة التحقق"
+              : editing
+                ? "حفظ التعديلات"
+                : "إضافة مورد جديد"}
           </button>
         </SupplierPanel>
       </form>

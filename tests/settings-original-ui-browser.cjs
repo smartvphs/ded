@@ -83,6 +83,17 @@ const assert = require("node:assert/strict");
         type: "json",
       },
     ];
+    let site = {
+      contact: {
+        phones: [
+          { label: "", number: "500000001" },
+          { label: "", number: "500000002" },
+        ],
+        emails: [{ label: "", email: "real@example.com" }],
+      },
+      workingHours: null,
+      pricingTypes: null,
+    };
     let failRead = false,
       failSave = false,
       malformed = false,
@@ -117,6 +128,14 @@ const assert = require("node:assert/strict");
       if (path === "/api/admin/notifications")
         return send({ items: [], unreadCount: 0 });
       if (path === "/api/admin/me") return send({ id: "staff", permissions });
+      if (path === "/api/admin/site-info") {
+        if (method === "PATCH") {
+          writes.push({ path, body });
+          site = { ...site, ...body };
+          failRead = true;
+        }
+        return send(site);
+      }
       if (path === "/api/admin/settings") {
         if (method === "PATCH") {
           writes.push({ path, body });
@@ -139,10 +158,12 @@ const assert = require("node:assert/strict");
             {
               key: "margins",
               label: "الهوامش",
-              settings: settings.map((s) => ({
-                ...s,
-                updatedAt: "2026-10-23T10:00:00Z",
-              })),
+              settings: settings
+                .filter((s) => !s.key.startsWith("contact_"))
+                .map((s) => ({
+                  ...s,
+                  updatedAt: "2026-10-23T10:00:00Z",
+                })),
             },
           ],
           unknown: [
@@ -182,11 +203,11 @@ const assert = require("node:assert/strict");
       (process.env.TEST_BASE_URL || "http://127.0.0.1:5189") + "/#settings",
     );
     await page
-      .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
+      .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
       .waitFor();
     await page.waitForFunction(
       () =>
-        document.querySelector('[aria-label="نسبة ربح المنصة على الخدمات"]')
+        document.querySelector('[aria-label="نسبة ربح المنصة على التسعيرات"]')
           .value === "20",
     );
     assert.equal(await page.locator(".st-tabs [role=tab]").count(), 7);
@@ -209,7 +230,7 @@ const assert = require("node:assert/strict");
     );
     assert.equal(
       await page
-        .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
+        .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
         .isDisabled(),
       true,
     );
@@ -218,7 +239,7 @@ const assert = require("node:assert/strict");
       .evaluateAll((nodes) => nodes.map((x) => x.getAttribute("href")));
     assert.ok(pricingIcons.every((x) => x.includes("/settings-reference/")));
     await page
-      .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
+      .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
       .fill("0");
     await page
       .getByRole("tab", { name: "إعدادات كاش باك", exact: true })
@@ -247,7 +268,7 @@ const assert = require("node:assert/strict");
       .click();
     assert.equal(
       await page
-        .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
+        .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
         .inputValue(),
       "0",
     );
@@ -266,7 +287,7 @@ const assert = require("node:assert/strict");
     );
     failSave = true;
     await page
-      .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
+      .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
       .fill("3");
     await page
       .getByRole("button", { name: "حفظ جميع الإعدادات", exact: true })
@@ -274,13 +295,13 @@ const assert = require("node:assert/strict");
     await page.getByRole("alert").waitFor();
     assert.equal(
       await page
-        .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
+        .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
         .inputValue(),
       "3",
     );
     assert.equal(
       await page
-        .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
+        .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
         .isDisabled(),
       false,
     );
@@ -325,8 +346,11 @@ const assert = require("node:assert/strict");
       .click();
     await page.getByText("تم حفظ الإعدادات.", { exact: true }).waitFor();
     assert.deepEqual(
-      writes.filter((x) => x.path === "/api/admin/settings").at(-1).body,
-      { contact_phones: ["500000009", "500000002"] },
+      writes
+        .filter((x) => x.path === "/api/admin/site-info")
+        .at(-1)
+        .body.contact.phones.map((x) => x.number),
+      ["500000009", "500000002"],
     );
     await page
       .getByRole("tab", { name: "إعدادات الذكاء الاصطناعي", exact: true })
@@ -385,11 +409,11 @@ const assert = require("node:assert/strict");
     permissions = ["settings.view"];
     await page.reload();
     await page
-      .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
+      .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
       .waitFor();
     assert.equal(
       await page
-        .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
+        .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
         .isDisabled(),
       true,
     );
@@ -398,7 +422,7 @@ const assert = require("node:assert/strict");
     await page.getByRole("alert").waitFor();
     assert.equal(
       await page
-        .getByLabel("نسبة ربح المنصة على الخدمات", { exact: true })
+        .getByLabel("نسبة ربح المنصة على التسعيرات", { exact: true })
         .isDisabled(),
       true,
     );

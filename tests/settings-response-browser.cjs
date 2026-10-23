@@ -30,7 +30,16 @@ const fixture = require("./fixtures/settings-response-2026-10-23.json");
       let body = { success: true, data: { items: [], unreadCount: 0 } };
       if (path === "/api/admin/me")
         body.data = { isSuperAdmin: true, permissions: [] };
-      else if (path === "/api/admin/settings") {
+      else if (path === "/api/admin/site-info")
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            success: true,
+            data: { contact: null, workingHours: null, pricingTypes: null },
+          }),
+        });
+      if (path === "/api/admin/settings") {
         if (request.method() === "PATCH") {
           const update = request.postDataJSON();
           writes.push(update);
@@ -50,7 +59,7 @@ const fixture = require("./fixtures/settings-response-2026-10-23.json");
     );
     await p.waitForFunction(
       () =>
-        document.querySelector('[aria-label="نسبة ربح المنصة على الخدمات"]')
+        document.querySelector('[aria-label="نسبة ربح المنصة على التسعيرات"]')
           ?.value === "20",
     );
     assert.equal(await p.locator(".st-tabs [role=tab]").count(), 7);
@@ -66,7 +75,7 @@ const fixture = require("./fixtures/settings-response-2026-10-23.json");
         .getByLabel("نسبة ربح المورد", { exact: true })
         .first()
         .isDisabled(),
-      true,
+      false,
     );
     await p.getByText("حتى 48 ساعة", { exact: true }).waitFor();
     await p.getByText("حتى 120 دقيقة", { exact: true }).waitFor();
@@ -135,7 +144,7 @@ const fixture = require("./fixtures/settings-response-2026-10-23.json");
       await p
         .getByRole("switch", { name: "يوم الأحد", exact: true })
         .isDisabled(),
-      true,
+      false,
     );
     assert.deepEqual(errors, []);
     console.log(

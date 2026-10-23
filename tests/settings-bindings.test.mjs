@@ -49,7 +49,7 @@ const payload = {
 test("official keys only, unknown read-only and unique label resolution", () => {
   const rows = settingsRows(payload);
   assert.equal(
-    resolveSetting(rows, { binding: "serviceMargin" }).key,
+    resolveSetting(rows, { binding: "pricingMargin" }).key,
     "platform_margin_percent",
   );
   assert.equal(

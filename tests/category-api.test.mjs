@@ -128,3 +128,18 @@ test("save confirmation rejects a server that ignores name or image changes", ()
     { value: "205", labelAr: "205", imageUrl: null },
   );
 });
+test("car model image readback verifies image_url against imageUrl including removal", () => {
+  assert.doesNotThrow(() =>
+    confirmCatalogSave(
+      "model",
+      { name_ar: "كامري", image_url: "https://example.com/model.png" },
+      { nameAr: "كامري", imageUrl: "https://example.com/model.png" },
+    ),
+  );
+  assert.throws(() =>
+    confirmCatalogSave("model", { image_url: "old" }, { imageUrl: "new" }),
+  );
+  assert.doesNotThrow(() =>
+    confirmCatalogSave("model", { image_url: null }, { imageUrl: null }),
+  );
+});

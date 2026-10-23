@@ -23,7 +23,18 @@ export function pricingParams({
     makeId: filters.company || undefined,
     status: filters.status || undefined,
     pricingType: filters.type || undefined,
-    ...(filters.date ? { from: filters.date, to: filters.date } : {}),
+    ...(filters.date
+      ? {
+          from: filters.date,
+          to: filters.date,
+          ...(filters.time
+            ? {
+                fromTime: filters.time.split("-")[0],
+                toTime: filters.time.split("-")[1],
+              }
+            : {}),
+        }
+      : {}),
   };
 }
 export function quoteBody(offers, deliveryDays) {

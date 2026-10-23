@@ -1,6 +1,14 @@
 // Aliases are resolved only against keys actually returned by the settings API.
 export const settingKeys = {
-  serviceMargin: ["platform_margin_percent"],
+  serviceMargin: [],
+  pricingMargin: ["platform_margin_percent"],
+  freeCommission: ["supplier_commission_free"],
+  normalCommission: ["supplier_commission_normal"],
+  expressCommission: ["supplier_commission_express"],
+  freeEnabled: ["pricing_free_enabled"],
+  normalEnabled: ["pricing_normal_enabled"],
+  expressEnabled: ["pricing_express_enabled"],
+  cashbackMin: ["cashback_min_order"],
   offerMargin: ["offer_target_margin_percent"],
   normalFee: ["pricing_fee_normal"],
   expressFee: ["pricing_fee_express"],
@@ -49,6 +57,7 @@ export function resolveSetting(rows, { binding, label, context }) {
     .map((key) => rows.find((r) => r.key === key))
     .filter(Boolean);
   if (matches.length === 1) return matches[0];
+  if (!label) return null;
   const names = [
     label,
     ...(context ? [context + " " + label, label + " " + context] : []),
