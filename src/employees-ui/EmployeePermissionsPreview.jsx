@@ -29,13 +29,81 @@ const extras = {
   },
 };
 const departmentCards = [
-  ["delivery", "مندوبي التوصيل"],
-  ["department", "موظفي الأقسام"],
-  ["order-staff", "قسم الطلبات"],
-  ["product-staff", "موظفي المنتجات"],
-  ["customer-service", "خدمة العملاء"],
-  ["supplier-staff", "موظفي الموردين"],
-  ["accountants", "المحاسبين"],
+  [
+    "delivery",
+    "مندوبي التوصيل",
+    [
+      "عرض طلبات التوصيل",
+      "تجهيز طلبات التوصيل",
+      "تحديث حالة التوصيل",
+      "استلام المرتجعات",
+    ],
+  ],
+  [
+    "department",
+    "موظفي الأقسام",
+    ["عرض بيانات الأقسام", "إضافة الأقسام", "تعديل الأقسام", "حذف الأقسام"],
+  ],
+  [
+    "order-staff",
+    "قسم الطلبات",
+    [
+      "عرض الطلبات",
+      "تعديل بنود الطلب",
+      "تحديث حالة الطلب",
+      "تعديل بيانات التواصل",
+      "تعديل الدفع والكوبون",
+      "إدارة المرتجعات",
+    ],
+  ],
+  [
+    "product-staff",
+    "موظفي المنتجات",
+    [
+      "عرض المنتجات",
+      "إضافة المنتجات",
+      "تعديل المنتجات",
+      "حذف المنتجات",
+      "إدارة الجودات والأسعار",
+      "تحديث المخزون",
+    ],
+  ],
+  [
+    "customer-service",
+    "خدمة العملاء",
+    [
+      "عرض بيانات العملاء",
+      "تعديل بيانات العملاء",
+      "عرض تذاكر المساعدة",
+      "الرد على التذاكر",
+      "تعيين التذاكر وتحديد الأولوية",
+      "إضافة ملاحظات داخلية",
+    ],
+  ],
+  [
+    "supplier-staff",
+    "موظفي الموردين",
+    [
+      "عرض بيانات الموردين",
+      "إضافة الموردين",
+      "تعديل بيانات الموردين",
+      "إيقاف وتفعيل الموردين",
+      "حذف الموردين",
+      "إدارة ملفات أسعار الموردين",
+    ],
+  ],
+  [
+    "accountants",
+    "المحاسبين",
+    [
+      "عرض تقرير الأداء والأرباح",
+      "عرض التكاليف",
+      "تسجيل وتعديل تكلفة القطعة",
+      "عرض أرصدة الموردين",
+      "عرض التسويات",
+      "إدارة التسويات",
+    ],
+  ],
 ];
 
 function Artwork({ box, expanded = false, className = "" }) {
@@ -201,15 +269,17 @@ export default function EmployeePermissionsPreview({ name = "محمد احمد" 
         </table>
       </div>
       <div className="epp-department-cards" aria-label="إضافات أقسام الموظفين">
-        {departmentCards.map(([id, label]) => (
+        {departmentCards.map(([id, label, options]) => (
           <ExtraCard
             key={id}
             title={`إضافات خاصة ب${label}`}
             description={`صلاحيات مخصصة للتحكم في عرض وإدارة قسم ${label}`}
-            options={[`عرض واجهة ${label}`, `إدارة ${label}`]}
-            values={[values[`${id}-view`], values[`${id}-manage`]]}
+            options={options}
+            values={options.map(
+              (_, index) => values[`${id}-permission-${index}`],
+            )}
             onToggle={(index, initial) =>
-              toggle(`${id}-${index === 0 ? "view" : "manage"}`, initial)
+              toggle(`${id}-permission-${index}`, initial)
             }
           />
         ))}

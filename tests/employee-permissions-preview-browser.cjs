@@ -92,18 +92,18 @@ const assert = require("node:assert/strict");
       7,
     );
     const deliveryView = root.getByRole("checkbox", {
-      name: "عرض واجهة مندوبي التوصيل",
+      name: "عرض طلبات التوصيل",
       exact: true,
     });
     assert.equal(await deliveryView.isChecked(), false);
     await deliveryView.check();
     await root
-      .getByRole("checkbox", { name: "إدارة المحاسبين", exact: true })
+      .getByRole("checkbox", { name: "إدارة التسويات", exact: true })
       .check();
     assert.equal(await deliveryView.isChecked(), true);
 
     assert.equal(await root.locator(".epp-main-row").count(), 8);
-    assert.equal(await root.getByRole("checkbox").count(), 38);
+    assert.equal(await root.getByRole("checkbox").count(), 62);
     const check = root.getByRole("checkbox", {
       name: "التصنيفات قراءة",
       exact: true,
@@ -113,7 +113,7 @@ const assert = require("node:assert/strict");
     await root.getByRole("button", { name: "التصنيفات", exact: true }).click();
     await root.getByRole("button", { name: "العملاء", exact: true }).click();
     assert.equal(await root.locator(".epp-extra-row .epp-extra").count(), 2);
-    assert.equal(await root.getByRole("checkbox").count(), 44);
+    assert.equal(await root.getByRole("checkbox").count(), 68);
     await root
       .getByRole("checkbox", { name: "تعديل الإحصائيات", exact: true })
       .check();
