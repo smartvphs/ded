@@ -47,6 +47,44 @@ const assert = require("node:assert/strict");
     await page.goto(
       (process.env.TEST_BASE_URL || "http://127.0.0.1:5189") + "/#employees",
     );
+    await page
+      .getByRole("heading", { name: "إدارة الموظفين", exact: true })
+      .waitFor();
+    await page.getByRole("button", { name: "إضافة جديد", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByLabel("اسم الموظف", { exact: true }).fill("موظف تجريبي");
+    await dialog
+      .getByLabel("البريد الإلكتروني", { exact: true })
+      .fill("preview@example.com");
+    await dialog
+      .getByLabel("كلمة المرور", { exact: true })
+      .fill("preview-only");
+    await dialog.getByRole("button", { name: "إضافة", exact: true }).click();
+    await page
+      .getByRole("button", { name: "عرض موظف تجريبي", exact: true })
+      .waitFor();
+    await page
+      .getByRole("button", { name: "حذف موظف تجريبي", exact: true })
+      .click();
+    await page
+      .getByRole("dialog")
+      .getByRole("button", { name: "حذف", exact: true })
+      .click();
+    assert.equal(
+      await page
+        .getByRole("button", { name: "عرض موظف تجريبي", exact: true })
+        .count(),
+      0,
+    );
+    await page
+      .getByRole("textbox", { name: "البحث عن موظف" })
+      .fill("محمد احمد");
+    assert.equal(await page.locator(".employees-ui tbody tr").count(), 1);
+    await page.getByRole("textbox", { name: "البحث عن موظف" }).fill("");
+    await page.screenshot({ path: "/tmp/employees-list.png", fullPage: true });
+    await page
+      .getByRole("button", { name: "عرض محمد احمد", exact: true })
+      .click();
     const root = page.locator(".employee-permissions-preview");
     await root.waitFor();
     assert.equal(await root.locator(".epp-main-row").count(), 8);

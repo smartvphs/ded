@@ -1,0 +1,322 @@
+.employees-main:has(> .employees-ui),
+.employees-main:has(> .employees-ui-detail) {
+  padding: 20px;
+  border-radius: 35px;
+  min-height: 0;
+}
+.employees-ui {
+  font-family: Cairo, sans-serif;
+  color: #202635;
+}
+.employees-ui .eui-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.employees-ui h1 {
+  font-size: 20px;
+  margin: 0;
+  font-weight: 750;
+}
+.employees-ui button,
+.employees-ui-detail button {
+  font-family: inherit;
+  cursor: pointer;
+}
+.employees-ui .eui-add,
+.employees-ui-detail .eui-back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  border-radius: 28px;
+  background: linear-gradient(110deg, #185bf0, #1d3ba9);
+  color: white;
+  padding: 9px 18px;
+  font-size: 13px;
+}
+.employees-ui .eui-paper {
+  background: white;
+  border-radius: 22px;
+  padding: 16px 14px 27px;
+}
+.employees-ui .eui-search {
+  display: flex;
+  align-items: center;
+  border: 1px solid #dce5f9;
+  border-radius: 9px;
+  max-width: 340px;
+  height: 42px;
+  margin-bottom: 10px;
+  color: #33415b;
+  padding: 0 12px;
+  gap: 10px;
+}
+.employees-ui .eui-search input {
+  border: 0;
+  outline: 0;
+  min-width: 0;
+  flex: 1;
+  font: inherit;
+  font-size: 12px;
+  background: transparent;
+  color: #26344b;
+}
+.employees-ui input::placeholder {
+  color: #9eb0d4;
+}
+.employees-ui .eui-scroll {
+  border: 1px solid #dce5f9;
+  border-radius: 12px;
+  overflow-x: auto;
+}
+.employees-ui table {
+  width: 100%;
+  min-width: 650px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin: 0;
+}
+.employees-ui table th,
+.employees-ui table td {
+  border: 0;
+  border-bottom: 1px solid #e2e9f7;
+  text-align: center;
+  color: #202635;
+  padding: 0 10px;
+  font-size: 13px;
+  font-weight: 400;
+}
+.employees-ui table th {
+  height: 54px;
+  background: #f3f7ff;
+}
+.employees-ui table td {
+  height: 80px;
+  background: white;
+}
+.employees-ui table tr:last-child td {
+  border-bottom: 0;
+}
+.employees-ui table th.eui-select {
+  width: 55px;
+}
+.employees-ui table th:nth-child(3) {
+  width: 29%;
+}
+.employees-ui input[type="checkbox"] {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 1px solid #8ea5ce;
+  border-radius: 6px;
+  vertical-align: middle;
+  background: white;
+  cursor: pointer;
+  position: relative;
+  margin: 0;
+}
+.employees-ui input[type="checkbox"]:checked {
+  background: #195bf2;
+  border-color: #195bf2;
+}
+.employees-ui input[type="checkbox"]:checked:after {
+  content: "";
+  position: absolute;
+  width: 5px;
+  height: 9px;
+  border: solid white;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  top: 3px;
+  left: 6px;
+}
+.employees-ui .eui-email {
+  direction: ltr;
+  font-size: 12px;
+}
+.employees-ui .eui-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  line-height: 20px;
+  padding: 0 7px;
+  border-radius: 20px;
+  font-size: 11px;
+}
+.employees-ui .eui-status i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+.employees-ui .eui-status.active {
+  color: #208643;
+  background: #ceeeda;
+}
+.employees-ui .eui-status.inactive {
+  color: #efa627;
+  background: #fff0c2;
+}
+.employees-ui .eui-actions {
+  display: flex;
+  justify-content: center;
+  gap: 9px;
+}
+.employees-ui .eui-actions button {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  padding: 7px;
+}
+.employees-ui .eui-actions svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 1.6;
+}
+.employees-ui .eui-view {
+  color: #f2a346;
+  background: #fff0dc;
+}
+.employees-ui .eui-delete {
+  color: #ff4a60;
+  background: #ffe9ed;
+}
+.employees-ui .eui-pagination {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 22px;
+}
+.employees-ui .eui-pagination button {
+  height: 32px;
+  min-width: 32px;
+  border: 1px solid #dce5f6;
+  border-radius: 8px;
+  background: white;
+  color: #202635;
+  font-size: 13px;
+  padding: 0 7px;
+}
+.employees-ui .eui-pagination button:first-child,
+.employees-ui .eui-pagination button:last-child {
+  border: 0;
+}
+.employees-ui .eui-pagination button.selected {
+  background: #185bf2;
+  color: white;
+  border-color: #185bf2;
+}
+.employees-ui .eui-pagination button:disabled {
+  color: #a0afd2;
+  cursor: default;
+}
+.employees-ui .eui-pagination span {
+  padding: 0 8px;
+}
+.employees-ui .eui-empty {
+  height: 160px;
+}
+.employees-ui-detail .eui-back {
+  margin-bottom: 15px;
+}
+.employees-ui .eui-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #162e5966;
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.employees-ui .eui-modal {
+  position: relative;
+  width: 500px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+  border-radius: 24px;
+  background: white;
+  padding: 30px;
+}
+.employees-ui .eui-modal h2 {
+  text-align: center;
+  font-size: 20px;
+  margin: 0 0 25px;
+}
+.employees-ui .eui-modal label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #899fc5;
+}
+.employees-ui .eui-modal input,
+.employees-ui .eui-modal select {
+  height: 42px;
+  border: 1px solid #dce5f8;
+  border-radius: 8px;
+  font: inherit;
+  color: #26344b;
+  padding: 0 12px;
+  background: white;
+  min-width: 0;
+}
+.employees-ui .eui-close {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  border: 0;
+  background: #ff1527;
+  color: white;
+  width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  padding: 0;
+}
+.employees-ui .eui-submit {
+  border: 0;
+  border-radius: 25px;
+  background: linear-gradient(110deg, #185bf0, #1d3ba9);
+  color: white;
+  padding: 10px 25px;
+  width: 100%;
+  font: inherit;
+}
+.employees-ui .eui-confirm {
+  display: flex;
+  gap: 12px;
+  margin-top: 25px;
+}
+.employees-ui .eui-confirm > button {
+  flex: 1;
+  border-radius: 25px;
+  border: 1px solid #dce5f8;
+}
+@media (max-width: 700px) {
+  .employees-main:has(> .employees-ui),
+  .employees-main:has(> .employees-ui-detail) {
+    padding: 12px;
+  }
+  .employees-ui h1 {
+    font-size: 17px;
+  }
+  .employees-ui .eui-paper {
+    padding: 12px;
+  }
+  .employees-ui .eui-add {
+    padding: 8px 12px;
+  }
+  .employees-ui .eui-heading {
+    margin-bottom: 17px;
+  }
+}

@@ -53,7 +53,7 @@ function Check({ label, checked, onChange }) {
   );
 }
 // Local preview state only: these controls never change server or session permissions.
-export default function EmployeePermissionsPreview() {
+export default function EmployeePermissionsPreview({ name = "محمد احمد" }) {
   const [open, setOpen] = useState({});
   const [pages, setPages] = useState({});
   const [page, setPage] = useState(1);
@@ -69,7 +69,7 @@ export default function EmployeePermissionsPreview() {
       dir="rtl"
       aria-label="صلاحيات الموظف"
     >
-      <h1>صلاحيات الموظف محمد احمد</h1>
+      <h1>صلاحيات الموظف {name}</h1>
       <div className="epp-scroll">
         <table className="epp-table">
           <thead>
