@@ -1,5 +1,6 @@
 import React, { Fragment, useState } from "react";
 import "./employee-permissions-preview.css";
+import { parentChecked, toggleParent } from "./permission-links.mjs";
 
 const rows = [
   ["managers", "المديرين", [true, true, true]],
@@ -10,6 +11,9 @@ const rows = [
   ["customers", "العملاء", [true, true, true]],
   ["suppliers", "الموردين", [true, true, true]],
   ["notifications", "الإشعارات", [true, true, true]],
+  ["departments", "الأقسام", [false, false, false]],
+  ["support", "تذاكر المساعدة", [false, false, false]],
+  ["finance", "تقرير الأداء والأرباح", [false, false, false]],
 ];
 const extras = {
   categories: {
@@ -222,8 +226,21 @@ export default function EmployeePermissionsPreview({ name = "محمد احمد" 
                     <td key={index}>
                       <Check
                         label={`${label} ${["قراءة", "كتابة", "حذف"][index]}`}
-                        checked={values[`${id}-${index}`] ?? initial}
-                        onChange={() => toggle(`${id}-${index}`, initial)}
+                        checked={parentChecked(
+                          values,
+                          `${id}-${index}`,
+                          initial,
+                        )}
+                        onChange={() =>
+                          setPages((previous) => ({
+                            ...previous,
+                            [page]: toggleParent(
+                              previous[page] || {},
+                              `${id}-${index}`,
+                              initial,
+                            ),
+                          }))
+                        }
                       />
                     </td>
                   ))}
