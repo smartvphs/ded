@@ -1,0 +1,168 @@
+// Visual examples from the supplied screens, isolated from all backend models.
+// These values and local edits are never sent to the admin APIs.
+export const orderStatistics = [
+  ["total", "58", "إجمالي الطلبات", "blue"],
+  ["new", "21", "طلب جديد", "green"],
+  ["shipped", "24", "تم الشحن", "purple"],
+  ["delivered", "8", "تم التوصيل", "pink"],
+  ["pending", "8", "طلبات معلقة", "yellow"],
+  ["cancelled", "8", "طلبات ملغية", "red"],
+];
+export const returnStatistics = [
+  ["returns", "5", "إجمالي طلبات الإرجاع", "blue"],
+  ["review", "1", "قيد المراجعة", "yellow"],
+  ["approved", "1", "موافق عليه", "green"],
+  ["refunded", "24", "تم الإسترداد", "purple"],
+];
+export const statuses = {
+  new: ["جديد", "orange"],
+  delivered: ["تم التوصيل", "green"],
+  shipped: ["جاري الشحن", "purple"],
+  pending: ["معلق", "yellow"],
+  cancelled: ["ملغي", "red"],
+  approved: ["موافق عليه", "green"],
+  received: ["تم الاستلام", "purple"],
+  review: ["قيد المراجعة", "yellow"],
+  refunded: ["تم الإسترداد", "purple"],
+};
+const sources = [
+  "شركة النيل",
+  "شركة النيل",
+  "المنصة",
+  "المنصة",
+  "حسن محمد",
+  "ليلى عبد الله",
+  "طارق نبيل",
+];
+const states = [
+  "new",
+  "delivered",
+  "shipped",
+  "delivered",
+  "new",
+  "cancelled",
+  "cancelled",
+];
+const days = ["02", "03", "08", "10", "15", "20", "25"];
+export const demoOrders = Array.from({ length: 70 }, (_, index) => ({
+  id: "PRQ-" + String(index + 1).padStart(3, "0"),
+  source: sources[index % 7],
+  company: ["تويوتا", "بي ام دبليو", "مرسيدس"][index % 3],
+  phone: "+96656892463",
+  partNumber: "4729183650",
+  pricingRequest: index === 0 ? "PRQ-001" : null,
+  date: "2025-05-" + days[index % 7],
+  dateLabel: days[index % 7] + " مايو 25",
+  quantity: [2, 4, 5, 10, 2, 3, 2][index % 7],
+  status: states[index % 7],
+}));
+const customerNames = [
+  "فاطمة يوسف",
+  "محمد أحمد",
+  "علي سعيد",
+  "سارة خليل",
+  "حسن محمد",
+  "ليلى عبد الله",
+  "طارق نبيل",
+  "طارق نبيل",
+];
+export const demoReturns = Array.from({ length: 80 }, (_, index) => ({
+  id: "RET-" + String(index + 1).padStart(3, "0"),
+  orderId: "PRQ-" + String(index + 1).padStart(3, "0"),
+  customer: customerNames[index % 8],
+  product: index % 2 ? "فلتر زيت محرك BMW" : "كمبروسور تكييف",
+  image: index % 2 ? "filter" : "wheel",
+  quantity: index % 2 ? 1 : 2,
+  quality: index % 8 >= 4 && index % 2 === 0,
+  dateLabel:
+    ["02", "03", "08", "10", "15", "20", "25", "30"][index % 8] + " مايو 25",
+  price: [
+    "300.50",
+    "300.00",
+    "120.00",
+    "200.00",
+    "300.00",
+    "200.00",
+    "150.200",
+    "300.00",
+  ][index % 8],
+  status: "approved",
+}));
+export const demoItems = [
+  {
+    id: "item-1",
+    name: "كمبروسور تكييف",
+    sku: "4729183650",
+    car: "مرسيدس C200 2021",
+    vin: "1HGCM82633A123456",
+    source: "المنصة",
+    quantity: 5,
+    original: true,
+    cost: "154.89",
+    salePrice: 150,
+    suggested: "154.89",
+  },
+  {
+    id: "item-2",
+    name: "كمبروسور تكييف",
+    sku: "4729183650",
+    car: "تويوتا كامري 2025",
+    vin: "JTDBK20U793456789",
+    source: "شركة النيل",
+    quantity: 5,
+    original: false,
+    cost: "30.100",
+    salePrice: 150,
+    supplier: true,
+  },
+  {
+    id: "item-3",
+    name: "كمبروسور تكييف",
+    sku: "4729183650",
+    car: "BMW 3 Series 2024",
+    vin: "1NXBR12E75Z123456",
+    source: "المنصة",
+    quantity: 2,
+    original: false,
+    cost: "154.89",
+    salePrice: 200,
+  },
+  {
+    id: "item-4",
+    name: "كمبروسور تكييف",
+    sku: "4729183650",
+    car: "تويوتا كامري 2025",
+    vin: "JTDBK20U793456789",
+    source: "المنصة",
+    quantity: 5,
+    original: true,
+    cost: "154.89",
+    salePrice: 200,
+  },
+  {
+    id: "item-5",
+    name: "كمبروسور تكييف",
+    sku: "4729183650",
+    car: "تويوتا كامري 2025",
+    vin: "JTDBK20U793456789",
+    source: "المنصة",
+    quantity: 3,
+    original: true,
+    cost: "154.89",
+    salePrice: 200,
+  },
+];
+export const demoSuppliers = [
+  {
+    name: "ساره ايمن صبحي",
+    image: "supplierWoman",
+    company: "شركة النيل",
+    phone: "+96685445541",
+  },
+  {
+    name: "محمد اسامه مشهور",
+    image: "supplierMan",
+    company: "شركة النيل",
+    phone: "+96685445541",
+  },
+];
