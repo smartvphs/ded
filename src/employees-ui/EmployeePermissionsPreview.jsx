@@ -28,6 +28,16 @@ const extras = {
     ],
   },
 };
+const departmentCards = [
+  ["delivery", "مندوبي التوصيل"],
+  ["department", "موظفي الأقسام"],
+  ["order-staff", "قسم الطلبات"],
+  ["product-staff", "موظفي المنتجات"],
+  ["customer-service", "خدمة العملاء"],
+  ["supplier-staff", "موظفي الموردين"],
+  ["accountants", "المحاسبين"],
+];
+
 function Artwork({ box, expanded = false, className = "" }) {
   return (
     <svg className={className} viewBox={box.join(" ")} aria-hidden="true">
@@ -52,6 +62,39 @@ function Check({ label, checked, onChange }) {
     </label>
   );
 }
+function ExtraCard({
+  title,
+  description,
+  options,
+  values,
+  onToggle,
+  initial = false,
+}) {
+  return (
+    <section className="epp-extra" aria-label={title}>
+      <div className="epp-extra-heading">
+        <Artwork expanded box={[1062, 439, 40, 40]} />
+        <div>
+          <h2>{title}</h2>
+          <p>{description}</p>
+        </div>
+      </div>
+      <div className="epp-options">
+        {options.map((option, index) => (
+          <div className="epp-option" key={option}>
+            <span>{option}</span>
+            <Check
+              label={option}
+              checked={values[index] ?? initial}
+              onChange={() => onToggle(index, initial)}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // Local preview state only: these controls never change server or session permissions.
 export default function EmployeePermissionsPreview({ name = "محمد احمد" }) {
   const [open, setOpen] = useState({});
@@ -156,6 +199,20 @@ export default function EmployeePermissionsPreview({ name = "محمد احمد" 
             ))}
           </tbody>
         </table>
+      </div>
+      <div className="epp-department-cards" aria-label="إضافات أقسام الموظفين">
+        {departmentCards.map(([id, label]) => (
+          <ExtraCard
+            key={id}
+            title={`إضافات خاصة ب${label}`}
+            description={`صلاحيات مخصصة للتحكم في عرض وإدارة قسم ${label}`}
+            options={[`عرض واجهة ${label}`, `إدارة ${label}`]}
+            values={[values[`${id}-view`], values[`${id}-manage`]]}
+            onToggle={(index, initial) =>
+              toggle(`${id}-${index === 0 ? "view" : "manage"}`, initial)
+            }
+          />
+        ))}
       </div>
       <nav className="epp-pagination" aria-label="صفحات صلاحيات الموظفين">
         <button disabled={page === 1} onClick={() => setPage(page - 1)}>

@@ -13,3 +13,7 @@ Validation: production build passed; all 90 native tests passed; browser checks 
 Added the employee list as the default admin employees screen from the newly supplied list reference. Includes search, row selection, sample status badges, view/delete actions, pagination, and the top-left Add New button. View opens that employee's permission preview with a return action. Add opens a local-only form; added employees and deletions exist only in memory. Password input is discarded when the preview entry is created. No employee API calls or authenticated permissions are changed.
 
 Browser checks now also verify entering the list, opening Add New, adding/removing a sample entry, searching, and opening permissions from the eye action.
+
+## Seven department cards
+
+Added seven local-only permission cards below the existing matrix: delivery agents, department staff, orders department, product staff, customer service, supplier staff and accountants. They reuse the customer-service card styling and reference icon. Each currently offers a view-interface and manage-section checkbox; both default off and affect preview state only. The user was asked to specify any more detailed options. Existing customer cashback and category statistics controls are preserved. Desktop/mobile browser checks cover seven cards, independent checkbox changes, no overflow and no staff API requests. Production build passed.

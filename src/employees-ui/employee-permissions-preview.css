@@ -214,3 +214,13 @@
 .employee-permissions-preview .epp-expand svg.is-open {
   transform: rotate(180deg);
 }
+.employee-permissions-preview .epp-department-cards {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+@media (max-width: 700px) {
+  .employee-permissions-preview .epp-department-cards .epp-options {
+    grid-template-columns: 1fr;
+  }
+}
