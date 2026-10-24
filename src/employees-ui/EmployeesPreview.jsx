@@ -14,7 +14,7 @@ const initial = [
 export default function EmployeesPreview() {
   const [employees, setEmployees] = useState(initial),
     [search, setSearch] = useState(""),
-    [selected, setSelected] = useState([2, 5]),
+    [selected, setSelected] = useState([]),
     [detail, setDetail] = useState(null),
     [modal, setModal] = useState(null),
     [page, setPage] = useState(1),

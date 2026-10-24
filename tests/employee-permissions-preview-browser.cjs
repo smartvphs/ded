@@ -87,6 +87,7 @@ const assert = require("node:assert/strict");
       .click();
     const root = page.locator(".employee-permissions-preview");
     await root.waitFor();
+    assert.equal(await root.locator("input[type=checkbox]:checked").count(),0);
     assert.equal(
       await root.locator(".epp-department-cards .epp-extra").count(),
       7,
@@ -120,12 +121,14 @@ const assert = require("node:assert/strict");
       name: "التصنيفات قراءة",
       exact: true,
     });
-    assert.equal(await check.isChecked(), true);
+    assert.equal(await check.isChecked(), false);
+    await check.check();
     await check.uncheck();
     await root.getByRole("button", { name: "التصنيفات", exact: true }).click();
     await root.getByRole("button", { name: "العملاء", exact: true }).click();
     assert.equal(await root.locator(".epp-extra-row .epp-extra").count(), 2);
     assert.equal(await root.getByRole("checkbox").count(), 77);
+    assert.equal(await root.locator(".epp-extra-row input:checked").count(),0);
     await root
       .getByRole("checkbox", { name: "تعديل الإحصائيات", exact: true })
       .check();

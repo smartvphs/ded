@@ -3,14 +3,14 @@ import "./employee-permissions-preview.css";
 import { parentChecked, toggleParent } from "./permission-links.mjs";
 
 const rows = [
-  ["managers", "المديرين", [true, true, true]],
-  ["categories", "التصنيفات", [true, false, false]],
-  ["products", "المنتجات", [false, true, true]],
-  ["orders", "الطلبات", [true, true, true]],
-  ["pricing", "طلبات التسعير", [true, false, false]],
-  ["customers", "العملاء", [true, true, true]],
-  ["suppliers", "الموردين", [true, true, true]],
-  ["notifications", "الإشعارات", [true, true, true]],
+  ["managers", "المديرين", [false, false, false]],
+  ["categories", "التصنيفات", [false, false, false]],
+  ["products", "المنتجات", [false, false, false]],
+  ["orders", "الطلبات", [false, false, false]],
+  ["pricing", "طلبات التسعير", [false, false, false]],
+  ["customers", "العملاء", [false, false, false]],
+  ["suppliers", "الموردين", [false, false, false]],
+  ["notifications", "الإشعارات", [false, false, false]],
   ["departments", "الأقسام", [false, false, false]],
   ["support", "تذاكر المساعدة", [false, false, false]],
   ["finance", "تقرير الأداء والأرباح", [false, false, false]],
@@ -264,12 +264,12 @@ export default function EmployeePermissionsPreview({ name = "محمد احمد" 
                                 label={option}
                                 checked={
                                   values[`${id}-extra-${index}`] ??
-                                  index % 2 === 0
+                                  false
                                 }
                                 onChange={() =>
                                   toggle(
                                     `${id}-extra-${index}`,
-                                    index % 2 === 0,
+                                    false,
                                   )
                                 }
                               />
