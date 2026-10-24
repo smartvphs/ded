@@ -393,11 +393,15 @@ function Invoice({ id, data, onSessionExpired, notice }) {
     if (sending || !invoice) return;
     setSending(true);
     try {
-      await adminRequest(
+      const response = await adminRequest(
         `/api/orders/admin/${encodeURIComponent(id)}/invoice/send`,
         { method: "POST", body: {} },
       );
-      notice("تم إرسال الفاتورة للعميل على الخادم.");
+      notice(
+        response.data?.notification?.id
+          ? "تم إرسال إشعار بالفاتورة للعميل داخل التطبيق."
+          : "تم قبول طلب إرسال الفاتورة من الخادم.",
+      );
     } catch (error) {
       notice(error.message);
     } finally {

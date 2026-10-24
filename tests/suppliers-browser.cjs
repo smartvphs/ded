@@ -422,6 +422,15 @@ const fs = require("node:fs");
       .waitFor();
     await page.locator(".su-table tbody tr").first().waitFor();
     await shot("list");
+    const listDelete = page
+      .getByLabel("حذف شركة النيل", { exact: true })
+      .first();
+    assert.equal(await listDelete.isDisabled(), false);
+    await listDelete.click();
+    await page
+      .getByRole("dialog", { name: "حذف المورد", exact: true })
+      .waitFor();
+    await page.getByRole("dialog").getByLabel("إغلاق", { exact: true }).click();
     await page
       .getByRole("button", { name: "إجراءات شركة النيل", exact: true })
       .first()

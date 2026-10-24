@@ -206,7 +206,11 @@ const assert = require("node:assert/strict");
           failInvoice = false;
           return send(route, null, null, 503);
         }
-        return send(route, { sent: true });
+        return send(route, {
+          invoiceNumber: "INV-TEST",
+          notification: { id: "invoice-notification" },
+          whatsapp: { url: "https://wa.me/966500000001?text=test" },
+        });
       }
       if (path === "/api/admin/me")
         return send(route, { id: "admin", permissions: ["orders.manage"] });
@@ -322,7 +326,7 @@ const assert = require("node:assert/strict");
       .click();
     await page
       .getByRole("status")
-      .filter({ hasText: "تم إرسال الفاتورة للعميل على الخادم" })
+      .filter({ hasText: "تم إرسال إشعار بالفاتورة للعميل داخل التطبيق" })
       .waitFor();
     assert.equal(
       writes.filter((x) => x.path.endsWith("/invoice/send")).length,

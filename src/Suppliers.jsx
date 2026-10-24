@@ -487,9 +487,12 @@ export default function Suppliers({ onSessionExpired }) {
                                 <SupplierIcon name="eye" size={34} />
                               </button>
                               <button
-                                disabled
-                                title="حذف المورد غير متاح حاليًا"
+                                disabled={row.account_status === "deleted"}
+                                title="حذف المورد"
                                 aria-label={"حذف " + row.name}
+                                onClick={() =>
+                                  setDialog({ kind: "delete", row })
+                                }
                               >
                                 <SupplierIcon name="trash" size={34} />
                               </button>
